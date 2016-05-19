@@ -2,13 +2,13 @@
  <parent>
   <groupId>edu.unc.mapseq.pipelines</groupId>
   <artifactId>gs-alignment</artifactId>
-  <version>0.6.19-SNAPSHOT</version>
+  <version>0.6.19</version>
  </parent>
  <name>MaPSeq :: Pipelines :: GS Alignment :: Web Service API</name>
  <modelVersion>4.0.0</modelVersion>
  <groupId>edu.unc.mapseq.pipelines.gs-alignment</groupId>
  <artifactId>gs-alignment-ws-api</artifactId>
- <version>0.6.19-SNAPSHOT</version>
+ <version>0.6.19</version>
  <packaging>bundle</packaging>
  <dependencies>
   <dependency>
