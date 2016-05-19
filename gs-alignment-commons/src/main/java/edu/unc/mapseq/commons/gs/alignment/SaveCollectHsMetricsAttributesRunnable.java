@@ -6,12 +6,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,64 +73,64 @@ public class SaveCollectHsMetricsAttributesRunnable implements Runnable {
                 }
                 sampleSet.add(sample);
             }
-        } catch (MaPSeqDAOException e) {
-            logger.warn("MaPSeqDAOException", e);
-        }
 
-        Set<String> keySet = new HashSet<String>(keyList);
+            for (Sample sample : sampleSet) {
 
-        for (Sample sample : sampleSet) {
+                File workflowDir = new File(sample.getOutputDirectory(), "GSAlignment");
 
-            File workflowDir = new File(sample.getOutputDirectory(), "GSAlignment");
+                Set<Attribute> attributeSet = sample.getAttributes();
 
-            Set<Attribute> attributeSet = sample.getAttributes();
+                Set<String> attributeNameSet = new HashSet<String>();
+                for (Attribute attribute : attributeSet) {
+                    attributeNameSet.add(attribute.getName());
+                }
 
-            Set<String> attributeNameSet = new HashSet<String>();
-            for (Attribute attribute : attributeSet) {
-                attributeNameSet.add(attribute.getName());
-            }
+                Set<String> synchSet = Collections.synchronizedSet(attributeNameSet);
 
-            Set<String> synchSet = Collections.synchronizedSet(attributeNameSet);
+                Collection<File> fileList = FileUtils.listFiles(workflowDir,
+                        FileFilterUtils.suffixFileFilter(".hs.metrics"), null);
 
-            Collection<File> fileList = FileUtils.listFiles(workflowDir,
-                    FileFilterUtils.suffixFileFilter(".hs.metrics"), null);
+                if (CollectionUtils.isNotEmpty(fileList)) {
+                    File metricsFile = fileList.iterator().next();
+                    List<String> lines = FileUtils.readLines(metricsFile);
+                    Iterator<String> lineIter = lines.iterator();
 
-            if (CollectionUtils.isNotEmpty(fileList)) {
-                File picardMarkDuplicatesMetricsFile = fileList.iterator().next();
-                try {
-                    List<String> lines = FileUtils.readLines(picardMarkDuplicatesMetricsFile);
-                    if (CollectionUtils.isNotEmpty(lines)) {
-                        for (String line : lines) {
-
-                            String[] split = line.split("=");
-                            String key = split[0];
-                            String value = split[1];
-                            if (keySet.contains(key)) {
-
-                                if (synchSet.contains(key)) {
-                                    for (Attribute attribute : attributeSet) {
-                                        if (attribute.getName().equals(key)) {
-                                            attribute.setValue(value);
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    Attribute attribute = new Attribute(key, value);
-                                    attribute.setId(attributeDAO.save(attribute));
-                                    attributeSet.add(attribute);
-                                }
-
-                            }
-
+                    String dataLine = null;
+                    while (lineIter.hasNext()) {
+                        String line = lineIter.next();
+                        if (line.startsWith("## METRICS CLASS")) {
+                            lineIter.next();
+                            dataLine = lineIter.next();
+                            break;
                         }
                     }
 
+                    String[] dataArray = dataLine.split("\t");
+
+                    for (int i = 0; i < keyList.size(); i++) {
+                        String key = keyList.get(i);
+                        String value = dataArray[i];
+                        if (StringUtils.isNotEmpty(value)) {
+                            if (synchSet.contains(key)) {
+                                for (Attribute attribute : attributeSet) {
+                                    if (attribute.getName().equals(key)) {
+                                        attribute.setValue(value);
+                                        break;
+                                    }
+                                }
+                            } else {
+                                Attribute attribute = new Attribute(key, value);
+                                attribute.setId(attributeDAO.save(attribute));
+                                attributeSet.add(attribute);
+                            }
+                        }
+                    }
                     sample.setAttributes(attributeSet);
                     sampleDAO.save(sample);
-                } catch (IOException | MaPSeqDAOException e) {
-                    e.printStackTrace();
                 }
             }
+        } catch (IOException | MaPSeqDAOException e) {
+            e.printStackTrace();
         }
 
     }
