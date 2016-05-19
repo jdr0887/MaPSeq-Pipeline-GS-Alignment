@@ -11,7 +11,7 @@
  <reference id="GSAlignmentWorkflowBeanService" interface="edu.unc.mapseq.workflow.WorkflowBeanService" component-name="GSAlignmentWorkflowBeanService" />
 
  <bean id="task" class="edu.unc.mapseq.executor.gs.alignment.GSAlignmentWorkflowExecutorTask">
-  <property name="workflowBeanService" ref="GSalignmentWorkflowBeanService" />
+  <property name="workflowBeanService" ref="GSAlignmentWorkflowBeanService" />
  </bean>
 
  <bean id="GSAlignmentWorkflowExecutorService" class="edu.unc.mapseq.executor.gs.alignment.GSAlignmentWorkflowExecutorService"
