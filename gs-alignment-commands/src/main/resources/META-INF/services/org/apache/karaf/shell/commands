@@ -1,0 +1,4 @@
+edu.unc.mapseq.commands.gs.alignment.RegisterToIRODSAction
+edu.unc.mapseq.commands.gs.alignment.RunWorkflowAction
+edu.unc.mapseq.commands.gs.alignment.SaveDepthOfCoverageAttributesAction
+edu.unc.mapseq.commands.gs.alignment.SaveMarkDuplicatesAttributesAction
