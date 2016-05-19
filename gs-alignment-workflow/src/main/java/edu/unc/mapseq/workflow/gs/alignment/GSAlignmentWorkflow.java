@@ -17,6 +17,7 @@ import org.renci.jlrm.condor.CondorJobEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.unc.mapseq.commons.gs.alignment.SaveCollectHsMetricsAttributesRunnable;
 import edu.unc.mapseq.dao.MaPSeqDAOBeanService;
 import edu.unc.mapseq.dao.model.Attribute;
 import edu.unc.mapseq.dao.model.Flowcell;
@@ -37,7 +38,7 @@ import edu.unc.mapseq.workflow.sequencing.SequencingWorkflowUtil;
 
 public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
 
-    private final Logger logger = LoggerFactory.getLogger(GSAlignmentWorkflow.class);
+    private static final Logger logger = LoggerFactory.getLogger(GSAlignmentWorkflow.class);
 
     public GSAlignmentWorkflow() {
         super();
@@ -247,11 +248,10 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
             // registerToIRODSRunnable.setSampleId(sample.getId());
             // executorService.submit(registerToIRODSRunnable);
 
-            // SaveDepthOfCoverageAttributesRunnable saveDepthOfCoverageAttributesRunnable = new
-            // SaveDepthOfCoverageAttributesRunnable();
-            // saveDepthOfCoverageAttributesRunnable.setMapseqDAOBeanService(daoBean);
-            // saveDepthOfCoverageAttributesRunnable.setSampleId(sample.getId());
-            // executorService.submit(saveDepthOfCoverageAttributesRunnable);
+            SaveCollectHsMetricsAttributesRunnable saveCollectHsMetricsAttributesRunnable = new SaveCollectHsMetricsAttributesRunnable();
+            saveCollectHsMetricsAttributesRunnable.setMapseqDAOBeanService(daoBean);
+            saveCollectHsMetricsAttributesRunnable.setSampleId(sample.getId());
+            executorService.submit(saveCollectHsMetricsAttributesRunnable);
 
         }
 
