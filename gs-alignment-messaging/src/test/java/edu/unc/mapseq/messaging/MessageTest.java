@@ -35,7 +35,7 @@ public class MessageTest {
     @Test
     public void testQueue() {
         ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(
-                String.format("nio://%s:61616", "152.19.198.146"));
+                String.format("nio://%s:61616", "152.54.3.109"));
         Connection connection = null;
         Session session = null;
         try {
@@ -55,7 +55,7 @@ public class MessageTest {
 
                 generator.writeStartObject();
                 generator.writeStringField("entityType", "Sample");
-                generator.writeStringField("id", "2516172");
+                generator.writeStringField("id", "2541643");
 
                 generator.writeArrayFieldStart("attributes");
 
@@ -69,7 +69,7 @@ public class MessageTest {
 
                 generator.writeStartObject();
                 generator.writeStringField("entityType", "WorkflowRun");
-                generator.writeStringField("name", "D13KNACXX_NCG_00064_L2_ATCACG_Alignment_Run_1");
+                generator.writeStringField("name", "jdr-test");
 
                 generator.writeArrayFieldStart("attributes");
 
