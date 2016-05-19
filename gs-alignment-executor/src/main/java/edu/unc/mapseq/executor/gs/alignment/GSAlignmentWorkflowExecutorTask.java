@@ -4,9 +4,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimerTask;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.unc.mapseq.dao.MaPSeqDAOBeanService;
 import edu.unc.mapseq.dao.MaPSeqDAOException;
 import edu.unc.mapseq.dao.WorkflowDAO;
 import edu.unc.mapseq.dao.WorkflowRunAttemptDAO;
@@ -40,17 +42,26 @@ public class GSAlignmentWorkflowExecutorTask extends TimerTask {
                 threadPoolExecutor.getActiveCount(), threadPoolExecutor.getTaskCount(),
                 threadPoolExecutor.getCompletedTaskCount()));
 
-        WorkflowDAO workflowDAO = this.workflowBeanService.getMaPSeqDAOBeanService().getWorkflowDAO();
-        WorkflowRunAttemptDAO workflowRunAttemptDAO = this.workflowBeanService.getMaPSeqDAOBeanService()
-                .getWorkflowRunAttemptDAO();
+        MaPSeqDAOBeanService mapseqDAOBeanService = this.workflowBeanService.getMaPSeqDAOBeanService();
+        WorkflowDAO workflowDAO = mapseqDAOBeanService.getWorkflowDAO();
+        WorkflowRunAttemptDAO workflowRunAttemptDAO = mapseqDAOBeanService.getWorkflowRunAttemptDAO();
 
         try {
+
+            Workflow workflow = null;
             List<Workflow> workflowList = workflowDAO.findByName("GSAlignment");
-            if (workflowList == null || (workflowList != null && workflowList.isEmpty())) {
-                logger.error("No Workflow Found: {}", "GSAlignment");
+            if (CollectionUtils.isEmpty(workflowList)) {
+                workflow = new Workflow("GSAlignment");
+                workflow.setId(workflowDAO.save(workflow));
+            } else {
+                workflow = workflowList.get(0);
+            }
+
+            if (workflow == null) {
+                logger.error("Could not find or create GSVariantCalling workflow");
                 return;
             }
-            Workflow workflow = workflowList.get(0);
+
             List<WorkflowRunAttempt> attempts = workflowRunAttemptDAO.findEnqueued(workflow.getId());
             if (attempts != null && !attempts.isEmpty()) {
                 logger.info("dequeuing {} WorkflowRunAttempt", attempts.size());
