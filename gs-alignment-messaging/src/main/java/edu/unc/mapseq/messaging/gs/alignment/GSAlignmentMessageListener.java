@@ -7,6 +7,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +80,7 @@ public class GSAlignmentMessageListener extends AbstractSequencingMessageListene
         Workflow workflow = null;
         try {
             List<Workflow> workflowList = workflowDAO.findByName("GSAlignment");
-            if (workflowList == null || (workflowList != null && workflowList.isEmpty())) {
+            if (CollectionUtils.isEmpty(workflowList)) {
                 logger.error("No Workflow Found: {}", "GSAlignment");
                 return;
             }
