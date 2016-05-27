@@ -27,6 +27,8 @@ public class GSAlignmentWorkflowExecutorTask extends TimerTask {
 
     private WorkflowBeanService workflowBeanService;
 
+    private String workflowName;
+
     public GSAlignmentWorkflowExecutorTask() {
         super();
     }
@@ -49,21 +51,21 @@ public class GSAlignmentWorkflowExecutorTask extends TimerTask {
         try {
 
             Workflow workflow = null;
-            List<Workflow> workflowList = workflowDAO.findByName("GSAlignment");
+            List<Workflow> workflowList = workflowDAO.findByName(getWorkflowName());
             if (CollectionUtils.isEmpty(workflowList)) {
-                workflow = new Workflow("GSAlignment");
+                workflow = new Workflow(getWorkflowName());
                 workflow.setId(workflowDAO.save(workflow));
             } else {
                 workflow = workflowList.get(0);
             }
 
             if (workflow == null) {
-                logger.error("Could not find or create GSVariantCalling workflow");
+                logger.error("Could not find or create {} workflow", getWorkflowName());
                 return;
             }
 
             List<WorkflowRunAttempt> attempts = workflowRunAttemptDAO.findEnqueued(workflow.getId());
-            if (attempts != null && !attempts.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(attempts)) {
                 logger.info("dequeuing {} WorkflowRunAttempt", attempts.size());
                 for (WorkflowRunAttempt attempt : attempts) {
 
@@ -84,6 +86,14 @@ public class GSAlignmentWorkflowExecutorTask extends TimerTask {
             e.printStackTrace();
         }
 
+    }
+
+    public String getWorkflowName() {
+        return workflowName;
+    }
+
+    public void setWorkflowName(String workflowName) {
+        this.workflowName = workflowName;
     }
 
     public WorkflowBeanService getWorkflowBeanService() {
