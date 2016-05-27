@@ -4,8 +4,6 @@
     <bundle>mvn:edu.unc.mapseq.pipelines.gs-alignment/gs-alignment-commons/${project.version}</bundle>
     <bundle>mvn:edu.unc.mapseq.pipelines.gs-alignment/gs-alignment-workflow/${project.version}</bundle>
     <bundle>mvn:edu.unc.mapseq.pipelines.gs-alignment/gs-alignment-commands/${project.version}</bundle>
-    <bundle>mvn:edu.unc.mapseq.pipelines.gs-alignment/gs-alignment-ws-api/${project.version}</bundle>
-    <bundle>mvn:edu.unc.mapseq.pipelines.gs-alignment/gs-alignment-ws-impl/${project.version}</bundle>    
     <bundle start-level="100">mvn:edu.unc.mapseq.pipelines.gs-alignment/gs-alignment-executor/${project.version}</bundle>
     <bundle start-level="100">mvn:edu.unc.mapseq.pipelines.gs-alignment/gs-alignment-messaging/${project.version}</bundle>
   </feature>
