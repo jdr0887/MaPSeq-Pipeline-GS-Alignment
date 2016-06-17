@@ -6,6 +6,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.StringUtils;
 import org.jgrapht.DirectedGraph;
@@ -17,7 +18,9 @@ import org.renci.jlrm.condor.CondorJobEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.unc.mapseq.commons.gs.alignment.RegisterToIRODSRunnable;
 import edu.unc.mapseq.commons.gs.alignment.SaveCollectHsMetricsAttributesRunnable;
+import edu.unc.mapseq.config.MaPSeqConfigurationService;
 import edu.unc.mapseq.dao.MaPSeqDAOBeanService;
 import edu.unc.mapseq.dao.model.Attribute;
 import edu.unc.mapseq.dao.model.Flowcell;
@@ -111,11 +114,6 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
             if (readPairList.size() != 2) {
                 throw new WorkflowException("readPairList != 2");
             }
-
-            // assumption: a dash is used as a delimiter between a participantId
-            // and the external code
-            int idx = sample.getName().lastIndexOf("-");
-            String sampleName = idx != -1 ? sample.getName().substring(0, idx) : sample.getName();
 
             // String rootFileName = String.format("%s_%s_L%03d", sample.getFlowcell().getName(), sample.getBarcode(),
             // sample.getLaneIndex());
@@ -223,35 +221,39 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
 
     @Override
     public void postRun() throws WorkflowException {
-        logger.info("ENTERING postRun()");
+        logger.debug("ENTERING postRun()");
 
         Set<Sample> sampleSet = getAggregatedSamples();
 
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            ExecutorService es = Executors.newSingleThreadExecutor();
 
-        for (Sample sample : sampleSet) {
+            for (Sample sample : sampleSet) {
 
-            if ("Undetermined".equals(sample.getBarcode())) {
-                continue;
+                if ("Undetermined".equals(sample.getBarcode())) {
+                    continue;
+                }
+
+                MaPSeqDAOBeanService daoBean = getWorkflowBeanService().getMaPSeqDAOBeanService();
+                MaPSeqConfigurationService configService = getWorkflowBeanService().getMaPSeqConfigurationService();
+
+                RegisterToIRODSRunnable registerToIRODSRunnable = new RegisterToIRODSRunnable(daoBean, configService,
+                        getWorkflowRunAttempt().getWorkflowRun().getName());
+                registerToIRODSRunnable.setSampleId(sample.getId());
+                es.submit(registerToIRODSRunnable);
+
+                SaveCollectHsMetricsAttributesRunnable saveCollectHsMetricsAttributesRunnable = new SaveCollectHsMetricsAttributesRunnable();
+                saveCollectHsMetricsAttributesRunnable.setMapseqDAOBeanService(daoBean);
+                saveCollectHsMetricsAttributesRunnable.setSampleId(sample.getId());
+                es.submit(saveCollectHsMetricsAttributesRunnable);
+
             }
 
-            MaPSeqDAOBeanService daoBean = getWorkflowBeanService().getMaPSeqDAOBeanService();
-            // MaPSeqConfigurationService configService = getWorkflowBeanService().getMaPSeqConfigurationService();
-
-            // RegisterToIRODSRunnable registerToIRODSRunnable = new RegisterToIRODSRunnable();
-            // registerToIRODSRunnable.setMapseqDAOBean(daoBean);
-            // registerToIRODSRunnable.setMapseqConfigurationService(configService);
-            // registerToIRODSRunnable.setSampleId(sample.getId());
-            // executorService.submit(registerToIRODSRunnable);
-
-            SaveCollectHsMetricsAttributesRunnable saveCollectHsMetricsAttributesRunnable = new SaveCollectHsMetricsAttributesRunnable();
-            saveCollectHsMetricsAttributesRunnable.setMapseqDAOBeanService(daoBean);
-            saveCollectHsMetricsAttributesRunnable.setSampleId(sample.getId());
-            executorService.submit(saveCollectHsMetricsAttributesRunnable);
-
+            es.shutdown();
+            es.awaitTermination(1L, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            logger.error(e.getMessage(), e);
         }
-
-        executorService.shutdown();
 
     }
 
