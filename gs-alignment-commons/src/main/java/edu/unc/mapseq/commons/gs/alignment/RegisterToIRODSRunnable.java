@@ -112,12 +112,6 @@ public class RegisterToIRODSRunnable implements Runnable {
                             return;
                         }
 
-                        String irodsHome = System.getenv("IRODS_HOME");
-                        if (StringUtils.isEmpty(irodsHome)) {
-                            logger.error("$IRODS_HOME is not set");
-                            return;
-                        }
-
                         String rootIRODSDirectory;
 
                         switch (runMode) {
@@ -141,10 +135,10 @@ public class RegisterToIRODSRunnable implements Runnable {
                         CommandInput commandInput = new CommandInput();
                         commandInput.setExitImmediately(Boolean.FALSE);
                         StringBuilder sb = new StringBuilder();
-                        sb.append(String.format("%s/imkdir -p %s%n", irodsHome, rootIRODSDirectory));
-                        sb.append(String.format("%s/imeta add -C %s Project GeneScreen%n", irodsHome,
-                                rootIRODSDirectory));
-                        sb.append(String.format("%s/imeta add -C %s ParticipantID %s GeneScreen%n", irodsHome,
+                        sb.append(String.format("$IRODS_HOME/imkdir -p %s%n", rootIRODSDirectory));
+                        sb.append(
+                                String.format("$IRODS_HOME/imeta add -C %s Project GeneScreen%n", rootIRODSDirectory));
+                        sb.append(String.format("$IRODS_HOME/imeta add -C %s ParticipantID %s GeneScreen%n",
                                 rootIRODSDirectory, subjectName));
                         commandInput.setCommand(sb.toString());
                         commandInput.setWorkDir(tmpDir);
@@ -174,10 +168,10 @@ public class RegisterToIRODSRunnable implements Runnable {
                             }
 
                             StringBuilder registerCommandSB = new StringBuilder();
-                            String registrationCommand = String.format("%s/ireg -f %s %s/%s", irodsHome,
+                            String registrationCommand = String.format("$IRODS_HOME/ireg -f %s %s/%s",
                                     bean.getFile().getAbsolutePath(), rootIRODSDirectory, bean.getFile().getName());
-                            String deRegistrationCommand = String.format("%s/irm -U %s/%s", irodsHome,
-                                    rootIRODSDirectory, bean.getFile().getName());
+                            String deRegistrationCommand = String.format("$IRODS_HOME/irm -U %s/%s", rootIRODSDirectory,
+                                    bean.getFile().getName());
                             registerCommandSB.append(registrationCommand).append("\n");
                             registerCommandSB.append(String.format("if [ $? != 0 ]; then %s; %s; fi%n",
                                     deRegistrationCommand, registrationCommand));
@@ -188,11 +182,11 @@ public class RegisterToIRODSRunnable implements Runnable {
                             commandInput = new CommandInput();
                             commandInput.setExitImmediately(Boolean.FALSE);
                             sb = new StringBuilder();
-                            sb.append(String.format("%s/imeta add -d %s/%s ParticipantID %s GeneScreen%n", irodsHome,
+                            sb.append(String.format("$IRODS_HOME/imeta add -d %s/%s ParticipantID %s GeneScreen%n",
                                     rootIRODSDirectory, bean.getFile().getName(), subjectName));
-                            sb.append(String.format("%s/imeta add -d %s/%s FileType %s GeneScreen%n", irodsHome,
+                            sb.append(String.format("$IRODS_HOME/imeta add -d %s/%s FileType %s GeneScreen%n",
                                     rootIRODSDirectory, bean.getFile().getName(), bean.getType()));
-                            sb.append(String.format("%s/imeta add -d %s/%s System %s GeneScreen%n", irodsHome,
+                            sb.append(String.format("$IRODS_HOME/imeta add -d %s/%s System %s GeneScreen%n",
                                     rootIRODSDirectory, bean.getFile().getName(),
                                     StringUtils.capitalize(bean.getRunMode().toString().toLowerCase())));
                             commandInput.setCommand(sb.toString());
