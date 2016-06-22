@@ -253,6 +253,7 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
             es.awaitTermination(1L, TimeUnit.HOURS);
         } catch (InterruptedException e) {
             logger.error(e.getMessage(), e);
+            throw new WorkflowException(e);
         }
 
     }
