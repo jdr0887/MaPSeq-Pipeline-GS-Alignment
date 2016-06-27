@@ -34,8 +34,7 @@ public class MessageTest {
 
     @Test
     public void testQueue() {
-        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(
-                String.format("nio://%s:61616", "152.54.3.109"));
+        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(String.format("nio://%s:61616", "152.54.3.109"));
         Connection connection = null;
         Session session = null;
         try {
@@ -108,8 +107,7 @@ public class MessageTest {
 
     @Test
     public void testEntireFlowcellBySample() throws IOException {
-        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(
-                String.format("nio://%s:61616", "biodev2.its.unc.edu"));
+        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(String.format("nio://%s:61616", "biodev2.its.unc.edu"));
         Connection connection = null;
         Session session = null;
         try {
@@ -124,8 +122,8 @@ public class MessageTest {
             String line;
 
             while ((line = br.readLine()) != null) {
-                producer.send(session.createTextMessage(String.format(format, line.trim(), "jdr-test-gs-alignment",
-                        DateFormatUtils.ISO_TIME_NO_T_FORMAT.format(new Date()))));
+                producer.send(session.createTextMessage(
+                        String.format(format, line.trim(), "jdr-test-gs-alignment", DateFormatUtils.ISO_TIME_NO_T_FORMAT.format(new Date()))));
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -152,8 +150,7 @@ public class MessageTest {
         QName portQName = new QName("http://ws.mapseq.unc.edu", "SamplePort");
         Service service = Service.create(serviceQName);
         String host = "biodev2.its.unc.edu";
-        service.addPort(portQName, SOAPBinding.SOAP11HTTP_MTOM_BINDING,
-                String.format("http://%s:%d/cxf/SampleService", host, 8181));
+        service.addPort(portQName, SOAPBinding.SOAP11HTTP_MTOM_BINDING, String.format("http://%s:%d/cxf/SampleService", host, 8181));
         SampleService sampleService = service.getPort(SampleService.class);
 
         List<Sample> sampleList = new ArrayList<Sample>();
@@ -166,8 +163,7 @@ public class MessageTest {
         sampleList.addAll(sampleService.findByFlowcellId(192405L));
         sampleList.addAll(sampleService.findByFlowcellId(191192L));
 
-        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(
-                String.format("nio://%s:61616", "biodev2.its.unc.edu"));
+        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(String.format("nio://%s:61616", "biodev2.its.unc.edu"));
         Connection connection = null;
         Session session = null;
         try {
@@ -184,8 +180,7 @@ public class MessageTest {
                 }
 
                 Flowcell flowcell = sample.getFlowcell();
-                String message = String.format(format, sample.getId(), flowcell.getName(), sample.getLaneIndex(),
-                        sample.getName());
+                String message = String.format(format, sample.getId(), flowcell.getName(), sample.getLaneIndex(), sample.getName());
                 System.out.println(message);
                 producer.send(session.createTextMessage(message));
             }

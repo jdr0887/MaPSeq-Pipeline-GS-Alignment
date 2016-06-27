@@ -2,7 +2,6 @@ package edu.unc.mapseq.workflow.gs.alignment;
 
 import java.io.File;
 import java.util.List;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import edu.unc.mapseq.commons.gs.alignment.RegisterToIRODSRunnable;
 import edu.unc.mapseq.commons.gs.alignment.SaveCollectHsMetricsAttributesRunnable;
-import edu.unc.mapseq.config.MaPSeqConfigurationService;
 import edu.unc.mapseq.dao.MaPSeqDAOBeanService;
 import edu.unc.mapseq.dao.model.Attribute;
 import edu.unc.mapseq.dao.model.Flowcell;
@@ -34,6 +32,7 @@ import edu.unc.mapseq.module.sequencing.fastqc.IgnoreLevelType;
 import edu.unc.mapseq.module.sequencing.picard.PicardSortOrderType;
 import edu.unc.mapseq.module.sequencing.picard2.PicardAddOrReplaceReadGroupsCLI;
 import edu.unc.mapseq.module.sequencing.picard2.PicardCollectHsMetricsCLI;
+import edu.unc.mapseq.workflow.SystemType;
 import edu.unc.mapseq.workflow.WorkflowException;
 import edu.unc.mapseq.workflow.sequencing.AbstractSequencingWorkflow;
 import edu.unc.mapseq.workflow.sequencing.SequencingWorkflowJobFactory;
@@ -53,18 +52,15 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
     }
 
     @Override
-    public String getVersion() {
-        ResourceBundle bundle = ResourceBundle.getBundle("edu/unc/mapseq/workflow/gs/alignment/workflow");
-        String version = bundle.getString("version");
-        return StringUtils.isNotEmpty(version) ? version : "0.1.0-SNAPSHOT";
+    public SystemType getSystem() {
+        return SystemType.PRODUCTION;
     }
 
     @Override
     public Graph<CondorJob, CondorJobEdge> createGraph() throws WorkflowException {
         logger.info("ENTERING createGraph()");
 
-        DirectedGraph<CondorJob, CondorJobEdge> graph = new DefaultDirectedGraph<CondorJob, CondorJobEdge>(
-                CondorJobEdge.class);
+        DirectedGraph<CondorJob, CondorJobEdge> graph = new DefaultDirectedGraph<CondorJob, CondorJobEdge>(CondorJobEdge.class);
 
         int count = 0;
 
@@ -123,12 +119,11 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
             try {
 
                 // new job
-                CondorJobBuilder builder = SequencingWorkflowJobFactory
-                        .createJob(++count, FastQCCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
+                CondorJobBuilder builder = SequencingWorkflowJobFactory.createJob(++count, FastQCCLI.class, attempt.getId(), sample.getId())
+                        .siteName(siteName);
                 File r1FastqFile = readPairList.get(0);
                 File fastqcR1Output = new File(workflowDirectory, String.format("%s.r1.fastqc.zip", rootFileName));
-                builder.addArgument(FastQCCLI.INPUT, r1FastqFile.getAbsolutePath())
-                        .addArgument(FastQCCLI.OUTPUT, fastqcR1Output.getAbsolutePath())
+                builder.addArgument(FastQCCLI.INPUT, r1FastqFile.getAbsolutePath()).addArgument(FastQCCLI.OUTPUT, fastqcR1Output.getAbsolutePath())
                         .addArgument(FastQCCLI.IGNORE, IgnoreLevelType.ERROR.toString());
 
                 CondorJob fastQCR1Job = builder.build();
@@ -136,28 +131,22 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 graph.addVertex(fastQCR1Job);
 
                 // new job
-                builder = SequencingWorkflowJobFactory
-                        .createJob(++count, FastQCCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
+                builder = SequencingWorkflowJobFactory.createJob(++count, FastQCCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
                 File r2FastqFile = readPairList.get(1);
                 File fastqcR2Output = new File(workflowDirectory, String.format("%s.r2.fastqc.zip", rootFileName));
-                builder.addArgument(FastQCCLI.INPUT, r2FastqFile.getAbsolutePath())
-                        .addArgument(FastQCCLI.OUTPUT, fastqcR2Output.getAbsolutePath())
+                builder.addArgument(FastQCCLI.INPUT, r2FastqFile.getAbsolutePath()).addArgument(FastQCCLI.OUTPUT, fastqcR2Output.getAbsolutePath())
                         .addArgument(FastQCCLI.IGNORE, IgnoreLevelType.ERROR.toString());
                 CondorJob fastQCR2Job = builder.build();
                 logger.info(fastQCR2Job.toString());
                 graph.addVertex(fastQCR2Job);
 
                 // new job
-                builder = SequencingWorkflowJobFactory
-                        .createJob(++count, BWAMEMCLI.class, attempt.getId(), sample.getId()).siteName(siteName)
+                builder = SequencingWorkflowJobFactory.createJob(++count, BWAMEMCLI.class, attempt.getId(), sample.getId()).siteName(siteName)
                         .numberOfProcessors(4);
                 File bwaMemOutFile = new File(workflowDirectory, String.format("%s.mem.sam", rootFileName));
-                builder.addArgument(BWAMEMCLI.THREADS, "4").addArgument(BWAMEMCLI.VERBOSITY, "1")
-                        .addArgument(BWAMEMCLI.FASTADB, referenceSequence)
-                        .addArgument(BWAMEMCLI.FASTQ1, r1FastqFile.getAbsolutePath())
-                        .addArgument(BWAMEMCLI.FASTQ2, r2FastqFile.getAbsolutePath())
-                        .addArgument(BWAMEMCLI.OUTFILE, bwaMemOutFile.getAbsolutePath())
-                        .addArgument(BWAMEMCLI.MARKSHORTERSPLITHITS);
+                builder.addArgument(BWAMEMCLI.THREADS, "4").addArgument(BWAMEMCLI.VERBOSITY, "1").addArgument(BWAMEMCLI.FASTADB, referenceSequence)
+                        .addArgument(BWAMEMCLI.FASTQ1, r1FastqFile.getAbsolutePath()).addArgument(BWAMEMCLI.FASTQ2, r2FastqFile.getAbsolutePath())
+                        .addArgument(BWAMEMCLI.OUTFILE, bwaMemOutFile.getAbsolutePath()).addArgument(BWAMEMCLI.MARKSHORTERSPLITHITS);
                 CondorJob bwaMemJob = builder.build();
                 logger.info(bwaMemJob.toString());
                 graph.addVertex(bwaMemJob);
@@ -165,18 +154,15 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 graph.addEdge(fastQCR2Job, bwaMemJob);
 
                 // new job
-                builder = SequencingWorkflowJobFactory
-                        .createJob(++count, PicardAddOrReplaceReadGroupsCLI.class, attempt.getId(), sample.getId())
+                builder = SequencingWorkflowJobFactory.createJob(++count, PicardAddOrReplaceReadGroupsCLI.class, attempt.getId(), sample.getId())
                         .siteName(siteName);
                 File fixRGOutput = new File(workflowDirectory, bwaMemOutFile.getName().replace(".sam", ".rg.bam"));
                 String readGroupId = String.format("%s.L%03d", flowcell.getName(), sample.getLaneIndex());
                 builder.addArgument(PicardAddOrReplaceReadGroupsCLI.INPUT, bwaMemOutFile.getAbsolutePath())
                         .addArgument(PicardAddOrReplaceReadGroupsCLI.OUTPUT, fixRGOutput.getAbsolutePath())
-                        .addArgument(PicardAddOrReplaceReadGroupsCLI.SORTORDER,
-                                PicardSortOrderType.COORDINATE.toString().toLowerCase())
+                        .addArgument(PicardAddOrReplaceReadGroupsCLI.SORTORDER, PicardSortOrderType.COORDINATE.toString().toLowerCase())
                         .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPID, readGroupId)
-                        .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPLIBRARY,
-                                String.format("%s.%s", subjectName, sample.getBarcode()))
+                        .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPLIBRARY, String.format("%s.%s", subjectName, sample.getBarcode()))
                         .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPPLATFORM, readGroupPlatform)
                         .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPPLATFORMUNIT, readGroupId)
                         .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPSAMPLENAME, subjectName)
@@ -187,8 +173,7 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 graph.addEdge(bwaMemJob, picardAddOrReplaceReadGroupsJob);
 
                 // new job
-                builder = SequencingWorkflowJobFactory
-                        .createJob(++count, RemoveCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
+                builder = SequencingWorkflowJobFactory.createJob(++count, RemoveCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
                 builder.addArgument(RemoveCLI.FILE, bwaMemOutFile.getAbsolutePath());
                 CondorJob removeJob = builder.build();
                 logger.info(removeJob.toString());
@@ -196,11 +181,9 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 graph.addEdge(picardAddOrReplaceReadGroupsJob, removeJob);
 
                 // new job
-                builder = SequencingWorkflowJobFactory
-                        .createJob(++count, PicardCollectHsMetricsCLI.class, attempt.getId(), sample.getId())
+                builder = SequencingWorkflowJobFactory.createJob(++count, PicardCollectHsMetricsCLI.class, attempt.getId(), sample.getId())
                         .siteName(siteName);
-                File picardCollectHsMetricsFile = new File(workflowDirectory,
-                        fixRGOutput.getName().replace(".bam", ".hs.metrics"));
+                File picardCollectHsMetricsFile = new File(workflowDirectory, fixRGOutput.getName().replace(".bam", ".hs.metrics"));
                 builder.addArgument(PicardCollectHsMetricsCLI.INPUT, fixRGOutput.getAbsolutePath())
                         .addArgument(PicardCollectHsMetricsCLI.OUTPUT, picardCollectHsMetricsFile.getAbsolutePath())
                         .addArgument(PicardCollectHsMetricsCLI.REFERENCESEQUENCE, referenceSequence)
@@ -235,9 +218,8 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 }
 
                 MaPSeqDAOBeanService daoBean = getWorkflowBeanService().getMaPSeqDAOBeanService();
-                MaPSeqConfigurationService configService = getWorkflowBeanService().getMaPSeqConfigurationService();
 
-                RegisterToIRODSRunnable registerToIRODSRunnable = new RegisterToIRODSRunnable(daoBean, configService,
+                RegisterToIRODSRunnable registerToIRODSRunnable = new RegisterToIRODSRunnable(daoBean, getSystem(),
                         getWorkflowRunAttempt().getWorkflowRun().getName());
                 registerToIRODSRunnable.setSampleId(sample.getId());
                 es.submit(registerToIRODSRunnable);
