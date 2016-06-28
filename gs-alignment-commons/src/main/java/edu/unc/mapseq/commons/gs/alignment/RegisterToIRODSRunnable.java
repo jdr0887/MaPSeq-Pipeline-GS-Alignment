@@ -30,6 +30,7 @@ import edu.unc.mapseq.dao.SampleDAO;
 import edu.unc.mapseq.dao.model.Attribute;
 import edu.unc.mapseq.dao.model.MimeType;
 import edu.unc.mapseq.dao.model.Sample;
+import edu.unc.mapseq.module.sequencing.fastqc.FastQC;
 import edu.unc.mapseq.module.sequencing.picard2.PicardAddOrReplaceReadGroups;
 import edu.unc.mapseq.module.sequencing.picard2.PicardCollectHsMetrics;
 import edu.unc.mapseq.workflow.SystemType;
@@ -148,17 +149,29 @@ public class RegisterToIRODSRunnable implements Runnable {
                                 new ImmutablePair<String, String>("MaPSeqFlowcellId", sample.getFlowcell().getId().toString()));
 
                         List<ImmutablePair<String, String>> attributeListWithJob = new ArrayList<>(attributeList);
+                        attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobName", FastQC.class.getSimpleName()));
+                        attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqMimeType", MimeType.APPLICATION_ZIP.toString()));
+                        files2RegisterToIRODS.add(
+                                new IRODSBean(new File(outputDirectory, String.format("%s.r1.fastqc.zip", workflowRunName)), attributeListWithJob));
+
+                        attributeListWithJob = new ArrayList<>(attributeList);
+                        attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobName", FastQC.class.getSimpleName()));
+                        attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqMimeType", MimeType.APPLICATION_ZIP.toString()));
+                        files2RegisterToIRODS.add(
+                                new IRODSBean(new File(outputDirectory, String.format("%s.r2.fastqc.zip", workflowRunName)), attributeListWithJob));
+
+                        attributeListWithJob = new ArrayList<>(attributeList);
                         attributeListWithJob
                                 .add(new ImmutablePair<String, String>("MaPSeqJobName", PicardAddOrReplaceReadGroups.class.getSimpleName()));
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqMimeType", MimeType.APPLICATION_BAM.toString()));
-                        File readGroupOutFile = new File(outputDirectory, String.format("%s.mem.rg.bam", workflowRunName));
-                        files2RegisterToIRODS.add(new IRODSBean(readGroupOutFile, attributeListWithJob));
+                        files2RegisterToIRODS
+                                .add(new IRODSBean(new File(outputDirectory, String.format("%s.mem.rg.bam", workflowRunName)), attributeListWithJob));
 
                         attributeListWithJob = new ArrayList<>(attributeList);
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobName", PicardCollectHsMetrics.class.getSimpleName()));
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqMimeType", MimeType.TEXT_PLAIN.toString()));
-                        File collectHsMetricsOutFile = new File(outputDirectory, readGroupOutFile.getName().replace(".bam", ".hs.metrics"));
-                        files2RegisterToIRODS.add(new IRODSBean(collectHsMetricsOutFile, attributeListWithJob));
+                        files2RegisterToIRODS.add(new IRODSBean(new File(outputDirectory, String.format("%s.mem.rg.hs.metrics", workflowRunName)),
+                                attributeListWithJob));
 
                         for (IRODSBean bean : files2RegisterToIRODS) {
 
