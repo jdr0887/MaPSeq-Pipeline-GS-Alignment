@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.unc.mapseq.commons.gs.alignment.RegisterToIRODSRunnable;
-import edu.unc.mapseq.config.MaPSeqConfigurationService;
 import edu.unc.mapseq.dao.MaPSeqDAOBeanService;
 import edu.unc.mapseq.dao.MaPSeqDAOException;
 import edu.unc.mapseq.dao.model.WorkflowRun;
@@ -26,9 +25,6 @@ public class RegisterToIRODSAction implements Action {
 
     @Reference
     private MaPSeqDAOBeanService maPSeqDAOBeanService;
-
-    @Reference
-    private MaPSeqConfigurationService maPSeqConfigurationService;
 
     @Option(name = "--sampleId", description = "Sample Identifier", required = false, multiValued = false)
     private Long sampleId;
