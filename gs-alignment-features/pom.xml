@@ -2,13 +2,13 @@
   <parent>
     <groupId>edu.unc.mapseq.pipelines</groupId>
     <artifactId>gs-alignment</artifactId>
-    <version>0.6.31-SNAPSHOT</version>
+    <version>0.6.31</version>
   </parent>
   <name>MaPSeq :: Pipelines :: GS Alignment :: Features</name>
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.unc.mapseq.pipelines.gs-alignment</groupId>
   <artifactId>gs-alignment-features</artifactId>
-  <version>0.6.31-SNAPSHOT</version>
+  <version>0.6.31</version>
   <packaging>pom</packaging>
   <build>
     <plugins>
