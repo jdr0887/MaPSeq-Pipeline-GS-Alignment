@@ -7,15 +7,10 @@
       <cm:property name="corePoolSize" value="100" />
       <cm:property name="maxPoolSize" value="100" />
       <cm:property name="siteName" value="Hatteras" />
-      <cm:property name="readGroupPlatform" value="Illumina HiSeq 2000 (or MiSeq)" />
+      <cm:property name="readGroupPlatform" value="Illumina" />
       <cm:property name="referenceSequence" value="$GSALIGNMENT_REFERENCES_DIRECTORY/BUILD.38/BUILD.38.p7.plusM.sorted.shortid.Ymasked.fa" />
-      <cm:property name="baitIntervalList" value="$GSALIGNMENT_RESOURCES_DIRECTORY/intervals/gs/GS_432_Target_Intervals_build38.interval_list" />
-      <cm:property name="targetIntervalList" value="$GSALIGNMENT_RESOURCES_DIRECTORY/intervals/gs/GS_432_Target_Intervals_build38.interval_list" />
-      <!-- <cm:property name="referenceSequence" value="$GSALIGNMENT_REFERENCES_DIRECTORY/BUILD.37.1/BUILD.37.1.plusM.sorted.shortid.fa" /> -->
-      <!-- <cm:property name="baitIntervalList" value="$GSALIGNMENT_RESOURCES_DIRECTORY/intervals/gs/GS_432_Target_Intervals_build37.interval_list" 
-        /> -->
-      <!-- <cm:property name="targetIntervalList" value="$GSALIGNMENT_RESOURCES_DIRECTORY/intervals/gs/GS_432_Target_Intervals_build37.interval_list" 
-        /> -->
+      <cm:property name="baitIntervalList" value="$GSALIGNMENT_RESOURCES_DIRECTORY/intervals/gs/GS_439_Target_Intervals_build38.interval_list" />
+      <cm:property name="targetIntervalList" value="$GSALIGNMENT_RESOURCES_DIRECTORY/intervals/gs/GS_439_Target_Intervals_build38.interval_list" />
     </cm:default-properties>
   </cm:property-placeholder>
 
