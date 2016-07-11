@@ -23,6 +23,8 @@ import edu.unc.mapseq.dao.MaPSeqDAOException;
 import edu.unc.mapseq.dao.SampleDAO;
 import edu.unc.mapseq.dao.model.Attribute;
 import edu.unc.mapseq.dao.model.Sample;
+import edu.unc.mapseq.dao.model.WorkflowRun;
+import edu.unc.mapseq.workflow.sequencing.SequencingWorkflowUtil;
 
 public class SaveCollectHsMetricsAttributesRunnable implements Runnable {
 
@@ -44,8 +46,12 @@ public class SaveCollectHsMetricsAttributesRunnable implements Runnable {
 
     private MaPSeqDAOBeanService mapseqDAOBeanService;
 
-    public SaveCollectHsMetricsAttributesRunnable() {
+    private WorkflowRun workflowRun;
+
+    public SaveCollectHsMetricsAttributesRunnable(MaPSeqDAOBeanService mapseqDAOBeanService, WorkflowRun workflowRun) {
         super();
+        this.mapseqDAOBeanService = mapseqDAOBeanService;
+        this.workflowRun = workflowRun;
     }
 
     @Override
@@ -73,7 +79,7 @@ public class SaveCollectHsMetricsAttributesRunnable implements Runnable {
 
             for (Sample sample : sampleSet) {
 
-                File workflowDir = new File(sample.getOutputDirectory(), "GSAlignment");
+                File workflowDirectory = SequencingWorkflowUtil.createOutputDirectory(sample, workflowRun.getWorkflow());
 
                 Set<Attribute> attributeSet = sample.getAttributes();
 
@@ -84,7 +90,7 @@ public class SaveCollectHsMetricsAttributesRunnable implements Runnable {
 
                 Set<String> synchSet = Collections.synchronizedSet(attributeNameSet);
 
-                Collection<File> fileList = FileUtils.listFiles(workflowDir, FileFilterUtils.suffixFileFilter(".hs.metrics"), null);
+                Collection<File> fileList = FileUtils.listFiles(workflowDirectory, FileFilterUtils.suffixFileFilter(".hs.metrics"), null);
 
                 if (CollectionUtils.isNotEmpty(fileList)) {
                     File metricsFile = fileList.iterator().next();
@@ -145,6 +151,14 @@ public class SaveCollectHsMetricsAttributesRunnable implements Runnable {
 
     public void setFlowcellId(Long flowcellId) {
         this.flowcellId = flowcellId;
+    }
+
+    public WorkflowRun getWorkflowRun() {
+        return workflowRun;
+    }
+
+    public void setWorkflowRun(WorkflowRun workflowRun) {
+        this.workflowRun = workflowRun;
     }
 
     public MaPSeqDAOBeanService getMapseqDAOBeanService() {
