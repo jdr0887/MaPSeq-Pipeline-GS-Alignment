@@ -32,7 +32,6 @@ import edu.unc.mapseq.module.sequencing.fastqc.IgnoreLevelType;
 import edu.unc.mapseq.module.sequencing.picard.PicardSortOrderType;
 import edu.unc.mapseq.module.sequencing.picard2.PicardAddOrReplaceReadGroupsCLI;
 import edu.unc.mapseq.module.sequencing.picard2.PicardCollectHsMetricsCLI;
-import edu.unc.mapseq.workflow.SystemType;
 import edu.unc.mapseq.workflow.WorkflowException;
 import edu.unc.mapseq.workflow.sequencing.AbstractSequencingWorkflow;
 import edu.unc.mapseq.workflow.sequencing.SequencingWorkflowJobFactory;
@@ -44,16 +43,6 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
 
     public GSAlignmentWorkflow() {
         super();
-    }
-
-    @Override
-    public String getName() {
-        return GSAlignmentWorkflow.class.getSimpleName().replace("Workflow", "");
-    }
-
-    @Override
-    public SystemType getSystem() {
-        return SystemType.PRODUCTION;
     }
 
     @Override
@@ -100,9 +89,11 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
             }
 
             Flowcell flowcell = sample.getFlowcell();
-            File workflowDirectory = new File(sample.getOutputDirectory(), getName());
-            File tmpDirectory = new File(workflowDirectory, "tmp");
-            tmpDirectory.mkdirs();
+            File workflowDirectory = SequencingWorkflowUtil.createOutputDirectory(sample, workflowRun.getWorkflow());
+            File tmpDir = new File(workflowDirectory, "tmp");
+            if (!tmpDir.exists()) {
+                tmpDir.mkdirs();
+            }
 
             List<File> readPairList = SequencingWorkflowUtil.getReadPairList(sample);
             logger.debug("readPairList.size(): {}", readPairList.size());
@@ -219,13 +210,11 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
 
                 MaPSeqDAOBeanService daoBean = getWorkflowBeanService().getMaPSeqDAOBeanService();
 
-                RegisterToIRODSRunnable registerToIRODSRunnable = new RegisterToIRODSRunnable(daoBean, getSystem(),
-                        getWorkflowRunAttempt().getWorkflowRun().getName());
+                RegisterToIRODSRunnable registerToIRODSRunnable = new RegisterToIRODSRunnable(daoBean, getWorkflowRunAttempt().getWorkflowRun());
                 registerToIRODSRunnable.setSampleId(sample.getId());
                 es.submit(registerToIRODSRunnable);
 
-                SaveCollectHsMetricsAttributesRunnable saveCollectHsMetricsAttributesRunnable = new SaveCollectHsMetricsAttributesRunnable();
-                saveCollectHsMetricsAttributesRunnable.setMapseqDAOBeanService(daoBean);
+                SaveCollectHsMetricsAttributesRunnable saveCollectHsMetricsAttributesRunnable = new SaveCollectHsMetricsAttributesRunnable(daoBean, getWorkflowRunAttempt().getWorkflowRun());
                 saveCollectHsMetricsAttributesRunnable.setSampleId(sample.getId());
                 es.submit(saveCollectHsMetricsAttributesRunnable);
 
