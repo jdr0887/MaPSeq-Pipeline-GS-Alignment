@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.unc.mapseq.pipelines</groupId>
   <artifactId>gs-alignment</artifactId>
-  <version>0.6.34-SNAPSHOT</version>
+  <version>0.6.34</version>
   <packaging>pom</packaging>
   <url>https://jdr0887.github.io/MaPSeq-Pipeline-GS-Alignment</url>
   <organization>
@@ -31,7 +31,7 @@
     <url>https://github.com/jdr0887/MaPSeq-Pipeline-GS-Alignment</url>
     <developerConnection>scm:git:git@github.com:jdr0887/MaPSeq-Pipeline-GS-Alignment.git</developerConnection>
     <connection>scm:git:git@github.com:jdr0887/MaPSeq-Pipeline-GS-Alignment.git</connection>
-    <tag>HEAD</tag>
+    <tag>gs-alignment-0.6.34</tag>
   </scm>
   <dependencyManagement>
     <dependencies>
@@ -48,12 +48,12 @@
       <dependency>
 	<groupId>edu.unc.mapseq.pipelines.gs-alignment</groupId>
 	<artifactId>gs-alignment-commons</artifactId>
-	<version>0.6.34-SNAPSHOT</version>
+	<version>0.6.34</version>
       </dependency>
       <dependency>
       	<groupId>edu.unc.mapseq.pipelines.gs-alignment</groupId>
       	<artifactId>gs-alignment-workflow</artifactId>
-      	<version>0.6.34-SNAPSHOT</version>
+      	<version>0.6.34</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
