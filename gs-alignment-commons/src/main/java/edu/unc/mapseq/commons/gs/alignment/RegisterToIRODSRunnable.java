@@ -3,6 +3,7 @@ package edu.unc.mapseq.commons.gs.alignment;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,11 +12,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 import org.renci.common.exec.BashExecutor;
 import org.renci.common.exec.CommandInput;
 import org.renci.common.exec.CommandOutput;
@@ -34,6 +39,7 @@ import edu.unc.mapseq.dao.model.WorkflowRun;
 import edu.unc.mapseq.module.sequencing.fastqc.FastQC;
 import edu.unc.mapseq.module.sequencing.picard2.PicardAddOrReplaceReadGroups;
 import edu.unc.mapseq.module.sequencing.picard2.PicardCollectHsMetrics;
+import edu.unc.mapseq.workflow.WorkflowBeanService;
 import edu.unc.mapseq.workflow.sequencing.IRODSBean;
 import edu.unc.mapseq.workflow.sequencing.SequencingWorkflowUtil;
 
@@ -95,6 +101,29 @@ public class RegisterToIRODSRunnable implements Runnable {
             ExecutorService es = Executors.newSingleThreadExecutor();
             for (Sample sample : sampleSet) {
                 es.submit(() -> {
+                    String referenceSequence = null;
+
+                    try {
+                        Collection<ServiceReference<WorkflowBeanService>> references = bundleContext.getServiceReferences(WorkflowBeanService.class,
+                                "$(osgi.service.blueprint.compname = GSAlignmentWorkflowBeanService)");
+
+                        if (CollectionUtils.isEmpty(references)) {
+                            logger.info("references is empty");
+                        }
+
+                        if (CollectionUtils.isNotEmpty(references)) {
+                            for (ServiceReference<WorkflowBeanService> sr : references) {
+                                WorkflowBeanService wbs = bundleContext.getService(sr);
+                                if (wbs != null && MapUtils.isNotEmpty(wbs.getAttributes())) {
+                                    logger.info(wbs.getClass().getName());
+                                    referenceSequence = wbs.getAttributes().get("referenceSequence");
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (InvalidSyntaxException e) {
+                        e.printStackTrace();
+                    }
 
                     try {
                         File workflowDirectory = SequencingWorkflowUtil.createOutputDirectory(sample, workflowRun.getWorkflow());
@@ -141,7 +170,7 @@ public class RegisterToIRODSRunnable implements Runnable {
                         List<ImmutablePair<String, String>> attributeList = Arrays.asList(
                                 new ImmutablePair<String, String>("ParticipantId", participantId),
                                 new ImmutablePair<String, String>("MaPSeqWorkflowVersion", version),
-                                new ImmutablePair<String, String>("MaPSeqWorkflowName", "GSAlignment"),
+                                new ImmutablePair<String, String>("MaPSeqWorkflowName", workflowRun.getWorkflow().getName()),
                                 new ImmutablePair<String, String>("MaPSeqStudyName", sample.getStudy().getName()),
                                 new ImmutablePair<String, String>("MaPSeqSampleId", sample.getId().toString()),
                                 new ImmutablePair<String, String>("MaPSeqSystem", workflowRun.getWorkflow().getSystem().getValue()),
@@ -163,12 +192,14 @@ public class RegisterToIRODSRunnable implements Runnable {
                         attributeListWithJob
                                 .add(new ImmutablePair<String, String>("MaPSeqJobName", PicardAddOrReplaceReadGroups.class.getSimpleName()));
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqMimeType", MimeType.APPLICATION_BAM.toString()));
+                        attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqReferenceSequenceFile", referenceSequence));
                         files2RegisterToIRODS.add(new IRODSBean(new File(workflowDirectory, String.format("%s.mem.rg.bam", workflowRun.getName())),
                                 attributeListWithJob));
 
                         attributeListWithJob = new ArrayList<>(attributeList);
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobName", PicardCollectHsMetrics.class.getSimpleName()));
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqMimeType", MimeType.TEXT_PLAIN.toString()));
+                        attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqReferenceSequenceFile", referenceSequence));
                         files2RegisterToIRODS.add(new IRODSBean(
                                 new File(workflowDirectory, String.format("%s.mem.rg.hs.metrics", workflowRun.getName())), attributeListWithJob));
 
