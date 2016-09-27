@@ -33,9 +33,12 @@ import edu.unc.mapseq.dao.MaPSeqDAOBeanService;
 import edu.unc.mapseq.dao.MaPSeqDAOException;
 import edu.unc.mapseq.dao.SampleDAO;
 import edu.unc.mapseq.dao.model.Attribute;
+import edu.unc.mapseq.dao.model.Job;
 import edu.unc.mapseq.dao.model.MimeType;
 import edu.unc.mapseq.dao.model.Sample;
+import edu.unc.mapseq.dao.model.Workflow;
 import edu.unc.mapseq.dao.model.WorkflowRun;
+import edu.unc.mapseq.dao.model.WorkflowRunAttempt;
 import edu.unc.mapseq.module.sequencing.fastqc.FastQC;
 import edu.unc.mapseq.module.sequencing.picard2.PicardAddOrReplaceReadGroups;
 import edu.unc.mapseq.module.sequencing.picard2.PicardCollectHsMetrics;
@@ -53,16 +56,16 @@ public class RegisterToIRODSRunnable implements Runnable {
 
     private Long sampleId;
 
-    private WorkflowRun workflowRun;
+    private WorkflowRunAttempt workflowRunAttempt;
 
     public RegisterToIRODSRunnable() {
         super();
     }
 
-    public RegisterToIRODSRunnable(MaPSeqDAOBeanService mapseqDAOBeanService, WorkflowRun workflowRun) {
+    public RegisterToIRODSRunnable(MaPSeqDAOBeanService mapseqDAOBeanService, WorkflowRunAttempt workflowRunAttempt) {
         super();
         this.mapseqDAOBeanService = mapseqDAOBeanService;
-        this.workflowRun = workflowRun;
+        this.workflowRunAttempt = workflowRunAttempt;
     }
 
     @Override
@@ -97,6 +100,9 @@ public class RegisterToIRODSRunnable implements Runnable {
         Bundle bundle = bundleContext.getBundle();
         String version = bundle.getVersion().toString();
 
+        final WorkflowRun workflowRun = workflowRunAttempt.getWorkflowRun();
+        final Workflow workflow = workflowRun.getWorkflow();
+
         try {
             ExecutorService es = Executors.newSingleThreadExecutor();
             for (Sample sample : sampleSet) {
@@ -121,7 +127,7 @@ public class RegisterToIRODSRunnable implements Runnable {
                     }
 
                     try {
-                        File workflowDirectory = SequencingWorkflowUtil.createOutputDirectory(sample, workflowRun.getWorkflow());
+                        File workflowDirectory = SequencingWorkflowUtil.createOutputDirectory(sample, workflow);
                         File tmpDir = new File(workflowDirectory, "tmp");
                         if (!tmpDir.exists()) {
                             tmpDir.mkdirs();
@@ -143,9 +149,8 @@ public class RegisterToIRODSRunnable implements Runnable {
                             return;
                         }
 
-                        String irodsDirectory = String.format("/MedGenZone/%s/sequencing/gs/analysis/%s/%s/%s",
-                                workflowRun.getWorkflow().getSystem().getValue(), sample.getFlowcell().getName(), sample.getName(),
-                                workflowRun.getWorkflow().getName());
+                        String irodsDirectory = String.format("/MedGenZone/%s/sequencing/gs/analysis/%s/%s/%s", workflow.getSystem().getValue(),
+                                sample.getFlowcell().getName(), sample.getName(), workflow.getName());
 
                         CommandOutput commandOutput = null;
 
@@ -165,38 +170,72 @@ public class RegisterToIRODSRunnable implements Runnable {
                         List<ImmutablePair<String, String>> attributeList = Arrays.asList(
                                 new ImmutablePair<String, String>("ParticipantId", participantId),
                                 new ImmutablePair<String, String>("MaPSeqWorkflowVersion", version),
-                                new ImmutablePair<String, String>("MaPSeqWorkflowName", workflowRun.getWorkflow().getName()),
+                                new ImmutablePair<String, String>("MaPSeqWorkflowName", workflow.getName()),
                                 new ImmutablePair<String, String>("MaPSeqStudyName", sample.getStudy().getName()),
                                 new ImmutablePair<String, String>("MaPSeqSampleId", sample.getId().toString()),
-                                new ImmutablePair<String, String>("MaPSeqSystem", workflowRun.getWorkflow().getSystem().getValue()),
+                                new ImmutablePair<String, String>("MaPSeqSystem", workflow.getSystem().getValue()),
                                 new ImmutablePair<String, String>("MaPSeqFlowcellId", sample.getFlowcell().getId().toString()));
 
+                        
+                        // 1st fastqc job
                         List<ImmutablePair<String, String>> attributeListWithJob = new ArrayList<>(attributeList);
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobName", FastQC.class.getSimpleName()));
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqMimeType", MimeType.APPLICATION_ZIP.toString()));
-                        files2RegisterToIRODS.add(new IRODSBean(new File(workflowDirectory, String.format("%s.r1.fastqc.zip", workflowRun.getName())),
-                                attributeListWithJob));
+                        File file = new File(workflowDirectory, String.format("%s.r1.fastqc.zip", workflowRun.getName()));
+                        Job job = SequencingWorkflowUtil.findJob(mapseqDAOBeanService, workflowRunAttempt.getId(), FastQC.class.getSimpleName(),
+                                file);
+                        if (job != null) {
+                            attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobId", job.getId().toString()));
+                        } else {
+                            logger.warn(String.format("Couldn't find job for: %d, %s", workflowRunAttempt.getId(), FastQC.class.getSimpleName()));
+                        }
+                        files2RegisterToIRODS.add(new IRODSBean(file, attributeListWithJob));
 
+                        // 2nd fastqc job
                         attributeListWithJob = new ArrayList<>(attributeList);
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobName", FastQC.class.getSimpleName()));
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqMimeType", MimeType.APPLICATION_ZIP.toString()));
-                        files2RegisterToIRODS.add(new IRODSBean(new File(workflowDirectory, String.format("%s.r2.fastqc.zip", workflowRun.getName())),
-                                attributeListWithJob));
+                        file = new File(workflowDirectory, String.format("%s.r2.fastqc.zip", workflowRun.getName()));
+                        job = SequencingWorkflowUtil.findJob(mapseqDAOBeanService, workflowRunAttempt.getId(), FastQC.class.getSimpleName(), file);
+                        if (job != null) {
+                            attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobId", job.getId().toString()));
+                        } else {
+                            logger.warn(String.format("Couldn't find job for: %d, %s", workflowRunAttempt.getId(), FastQC.class.getSimpleName()));
+                        }
+                        files2RegisterToIRODS.add(new IRODSBean(file, attributeListWithJob));
 
+                        // PicardAddOrReplaceReadGroups job
                         attributeListWithJob = new ArrayList<>(attributeList);
                         attributeListWithJob
                                 .add(new ImmutablePair<String, String>("MaPSeqJobName", PicardAddOrReplaceReadGroups.class.getSimpleName()));
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqMimeType", MimeType.APPLICATION_BAM.toString()));
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqReferenceSequenceFile", referenceSequence));
-                        files2RegisterToIRODS.add(new IRODSBean(new File(workflowDirectory, String.format("%s.mem.rg.bam", workflowRun.getName())),
-                                attributeListWithJob));
+                        file = new File(workflowDirectory, String.format("%s.mem.rg.bam", workflowRun.getName()));
+                        job = SequencingWorkflowUtil.findJob(mapseqDAOBeanService, workflowRunAttempt.getId(),
+                                PicardAddOrReplaceReadGroups.class.getSimpleName(), file);
+                        if (job != null) {
+                            attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobId", job.getId().toString()));
+                        } else {
+                            logger.warn(String.format("Couldn't find job for: %d, %s", workflowRunAttempt.getId(),
+                                    PicardAddOrReplaceReadGroups.class.getSimpleName()));
+                        }
+                        files2RegisterToIRODS.add(new IRODSBean(file, attributeListWithJob));
 
+                        // PicardCollectHsMetrics job
                         attributeListWithJob = new ArrayList<>(attributeList);
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobName", PicardCollectHsMetrics.class.getSimpleName()));
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqMimeType", MimeType.TEXT_PLAIN.toString()));
                         attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqReferenceSequenceFile", referenceSequence));
-                        files2RegisterToIRODS.add(new IRODSBean(
-                                new File(workflowDirectory, String.format("%s.mem.rg.hs.metrics", workflowRun.getName())), attributeListWithJob));
+                        file = new File(workflowDirectory, String.format("%s.mem.rg.hs.metrics", workflowRun.getName()));
+                        job = SequencingWorkflowUtil.findJob(mapseqDAOBeanService, workflowRunAttempt.getId(),
+                                PicardCollectHsMetrics.class.getSimpleName(), file);
+                        if (job != null) {
+                            attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobId", job.getId().toString()));
+                        } else {
+                            logger.warn(String.format("Couldn't find job for: %d, %s", workflowRunAttempt.getId(),
+                                    PicardCollectHsMetrics.class.getSimpleName()));
+                        }
+                        files2RegisterToIRODS.add(new IRODSBean(file, attributeListWithJob));
 
                         for (IRODSBean bean : files2RegisterToIRODS) {
 
@@ -289,12 +328,12 @@ public class RegisterToIRODSRunnable implements Runnable {
         this.sampleId = sampleId;
     }
 
-    public WorkflowRun getWorkflowRun() {
-        return workflowRun;
+    public WorkflowRunAttempt getWorkflowRunAttempt() {
+        return workflowRunAttempt;
     }
 
-    public void setWorkflowRun(WorkflowRun workflowRun) {
-        this.workflowRun = workflowRun;
+    public void setWorkflowRunAttempt(WorkflowRunAttempt workflowRunAttempt) {
+        this.workflowRunAttempt = workflowRunAttempt;
     }
 
 }
