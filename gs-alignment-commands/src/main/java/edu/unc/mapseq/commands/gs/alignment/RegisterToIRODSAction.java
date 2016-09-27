@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import edu.unc.mapseq.commons.gs.alignment.RegisterToIRODSRunnable;
 import edu.unc.mapseq.dao.MaPSeqDAOBeanService;
 import edu.unc.mapseq.dao.MaPSeqDAOException;
-import edu.unc.mapseq.dao.model.WorkflowRun;
+import edu.unc.mapseq.dao.model.WorkflowRunAttempt;
 
 @Command(scope = "gs-alignment", name = "register-to-irods", description = "Register a sample output to iRODS")
 @Service
@@ -31,17 +31,17 @@ public class RegisterToIRODSAction implements Action {
     @Option(name = "--flowcellId", description = "Flowcell Identifier", required = false, multiValued = false)
     private Long flowcellId;
 
-    @Option(name = "--workflowRunId", description = "WorkflowRun Identifier", required = true, multiValued = false)
-    private Long workflowRunId;
+    @Option(name = "--workflowRunAttemptId", description = "WorkflowRunAttempt Identifier", required = true, multiValued = false)
+    private Long workflowRunAttemptId;
 
     @Override
     public Object execute() {
         logger.debug("ENTERING execute()");
         try {
             ExecutorService es = Executors.newSingleThreadExecutor();
-            WorkflowRun workflowRun = maPSeqDAOBeanService.getWorkflowRunDAO().findById(workflowRunId);
+            WorkflowRunAttempt workflowRunAttempt = maPSeqDAOBeanService.getWorkflowRunAttemptDAO().findById(workflowRunAttemptId);
 
-            RegisterToIRODSRunnable runnable = new RegisterToIRODSRunnable(maPSeqDAOBeanService, workflowRun);
+            RegisterToIRODSRunnable runnable = new RegisterToIRODSRunnable(maPSeqDAOBeanService, workflowRunAttempt);
             if (sampleId != null) {
                 runnable.setSampleId(sampleId);
             }
@@ -72,12 +72,12 @@ public class RegisterToIRODSAction implements Action {
         this.sampleId = sampleId;
     }
 
-    public Long getWorkflowRunId() {
-        return workflowRunId;
+    public Long getWorkflowRunAttemptId() {
+        return workflowRunAttemptId;
     }
 
-    public void setWorkflowRunId(Long workflowRunId) {
-        this.workflowRunId = workflowRunId;
+    public void setWorkflowRunAttemptId(Long workflowRunAttemptId) {
+        this.workflowRunAttemptId = workflowRunAttemptId;
     }
 
 }

@@ -222,7 +222,7 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
 
                 MaPSeqDAOBeanService daoBean = getWorkflowBeanService().getMaPSeqDAOBeanService();
 
-                RegisterToIRODSRunnable registerToIRODSRunnable = new RegisterToIRODSRunnable(daoBean, getWorkflowRunAttempt().getWorkflowRun());
+                RegisterToIRODSRunnable registerToIRODSRunnable = new RegisterToIRODSRunnable(daoBean, getWorkflowRunAttempt());
                 registerToIRODSRunnable.setSampleId(sample.getId());
                 es.submit(registerToIRODSRunnable);
 
