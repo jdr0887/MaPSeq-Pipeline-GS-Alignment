@@ -41,11 +41,6 @@
       	<version>0.0.3</version>
       </dependency>
       <dependency>
-      	<groupId>edu.unc.mapseq.pipelines.gs-alignment</groupId>
-      	<artifactId>gs-alignment-ws-api</artifactId>
-      	<version>0.6.25-SNAPSHOT</version>
-      </dependency>
-      <dependency>
 	<groupId>edu.unc.mapseq.pipelines.gs-alignment</groupId>
 	<artifactId>gs-alignment-commons</artifactId>
 	<version>0.6.43-SNAPSHOT</version>
