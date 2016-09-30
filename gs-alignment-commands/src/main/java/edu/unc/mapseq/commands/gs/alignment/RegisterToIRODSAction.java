@@ -16,7 +16,7 @@ import edu.unc.mapseq.dao.MaPSeqDAOBeanService;
 import edu.unc.mapseq.dao.MaPSeqDAOException;
 import edu.unc.mapseq.dao.model.WorkflowRunAttempt;
 
-@Command(scope = "gs-alignment", name = "register-to-irods", description = "Register a sample output to iRODS")
+@Command(scope = "gs-alignment", name = "register-to-irods", description = "Register a WorkflowRunAttempt output to iRODS")
 @Service
 public class RegisterToIRODSAction implements Action {
 
@@ -24,12 +24,6 @@ public class RegisterToIRODSAction implements Action {
 
     @Reference
     private MaPSeqDAOBeanService maPSeqDAOBeanService;
-
-    @Option(name = "--sampleId", description = "Sample Identifier", required = false, multiValued = false)
-    private Long sampleId;
-
-    @Option(name = "--flowcellId", description = "Flowcell Identifier", required = false, multiValued = false)
-    private Long flowcellId;
 
     @Option(name = "--workflowRunAttemptId", description = "WorkflowRunAttempt Identifier", required = true, multiValued = false)
     private Long workflowRunAttemptId;
@@ -40,36 +34,13 @@ public class RegisterToIRODSAction implements Action {
         try {
             ExecutorService es = Executors.newSingleThreadExecutor();
             WorkflowRunAttempt workflowRunAttempt = maPSeqDAOBeanService.getWorkflowRunAttemptDAO().findById(workflowRunAttemptId);
-
             RegisterToIRODSRunnable runnable = new RegisterToIRODSRunnable(maPSeqDAOBeanService, workflowRunAttempt);
-            if (sampleId != null) {
-                runnable.setSampleId(sampleId);
-            }
-            if (flowcellId != null) {
-                runnable.setFlowcellId(flowcellId);
-            }
             es.submit(runnable);
             es.shutdown();
         } catch (MaPSeqDAOException e) {
             logger.error(e.getMessage(), e);
         }
         return null;
-    }
-
-    public Long getFlowcellId() {
-        return flowcellId;
-    }
-
-    public void setFlowcellId(Long flowcellId) {
-        this.flowcellId = flowcellId;
-    }
-
-    public Long getSampleId() {
-        return sampleId;
-    }
-
-    public void setSampleId(Long sampleId) {
-        this.sampleId = sampleId;
     }
 
     public Long getWorkflowRunAttemptId() {

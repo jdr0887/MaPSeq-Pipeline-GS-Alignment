@@ -54,7 +54,8 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
 
         int count = 0;
 
-        Set<Sample> sampleSet = getAggregatedSamples();
+        Set<Sample> sampleSet = SequencingWorkflowUtil.getAggregatedSamples(getWorkflowBeanService().getMaPSeqDAOBeanService(),
+                getWorkflowRunAttempt());
         logger.info("sampleSet.size(): {}", sampleSet.size());
 
         String siteName = getWorkflowBeanService().getAttributes().get("siteName");
@@ -165,8 +166,7 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 graph.addEdge(bwaMemJob, picardAddOrReplaceReadGroupsJob);
 
                 // new job
-                builder = SequencingWorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class, attempt.getId(), sample.getId())
-                        .siteName(siteName);
+                builder = SequencingWorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
                 File picardAddOrReplaceReadGroupsIndexOut = new File(workflowDirectory, fixRGOutput.getName().replace(".bam", ".bai"));
                 builder.addArgument(SAMToolsIndexCLI.INPUT, fixRGOutput.getAbsolutePath()).addArgument(SAMToolsIndexCLI.OUTPUT,
                         picardAddOrReplaceReadGroupsIndexOut.getAbsolutePath());
@@ -209,28 +209,17 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
     public void postRun() throws WorkflowException {
         logger.debug("ENTERING postRun()");
 
-        Set<Sample> sampleSet = getAggregatedSamples();
-
         try {
             ExecutorService es = Executors.newSingleThreadExecutor();
 
-            for (Sample sample : sampleSet) {
+            MaPSeqDAOBeanService daoBean = getWorkflowBeanService().getMaPSeqDAOBeanService();
 
-                if ("Undetermined".equals(sample.getBarcode())) {
-                    continue;
-                }
+            RegisterToIRODSRunnable registerToIRODSRunnable = new RegisterToIRODSRunnable(daoBean, getWorkflowRunAttempt());
+            es.submit(registerToIRODSRunnable);
 
-                MaPSeqDAOBeanService daoBean = getWorkflowBeanService().getMaPSeqDAOBeanService();
-
-                RegisterToIRODSRunnable registerToIRODSRunnable = new RegisterToIRODSRunnable(daoBean, getWorkflowRunAttempt());
-                registerToIRODSRunnable.setSampleId(sample.getId());
-                es.submit(registerToIRODSRunnable);
-
-                SaveCollectHsMetricsAttributesRunnable saveCollectHsMetricsAttributesRunnable = new SaveCollectHsMetricsAttributesRunnable(daoBean, getWorkflowRunAttempt().getWorkflowRun());
-                saveCollectHsMetricsAttributesRunnable.setSampleId(sample.getId());
-                es.submit(saveCollectHsMetricsAttributesRunnable);
-
-            }
+            SaveCollectHsMetricsAttributesRunnable saveCollectHsMetricsAttributesRunnable = new SaveCollectHsMetricsAttributesRunnable(daoBean,
+                    getWorkflowRunAttempt());
+            es.submit(saveCollectHsMetricsAttributesRunnable);
 
             es.shutdown();
             es.awaitTermination(1L, TimeUnit.HOURS);

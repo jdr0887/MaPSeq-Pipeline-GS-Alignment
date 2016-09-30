@@ -24,6 +24,7 @@ import edu.unc.mapseq.dao.SampleDAO;
 import edu.unc.mapseq.dao.model.Attribute;
 import edu.unc.mapseq.dao.model.Sample;
 import edu.unc.mapseq.dao.model.WorkflowRun;
+import edu.unc.mapseq.dao.model.WorkflowRunAttempt;
 import edu.unc.mapseq.workflow.sequencing.SequencingWorkflowUtil;
 
 public class SaveCollectHsMetricsAttributesRunnable implements Runnable {
@@ -40,44 +41,37 @@ public class SaveCollectHsMetricsAttributesRunnable implements Runnable {
             "PCT_TARGET_BASES_50X", "PCT_TARGET_BASES_100X", "HS_LIBRARY_SIZE", "HS_PENALTY_10X", "HS_PENALTY_20X", "HS_PENALTY_30X",
             "HS_PENALTY_40X", "HS_PENALTY_50X", "HS_PENALTY_100X", "AT_DROPOUT", "GC_DROPOUT", "HET_SNP_SENSITIVITY", "HET_SNP_Q");
 
-    private Long sampleId;
-
-    private Long flowcellId;
-
     private MaPSeqDAOBeanService mapseqDAOBeanService;
 
-    private WorkflowRun workflowRun;
+    private WorkflowRunAttempt workflowRunAttempt;
 
-    public SaveCollectHsMetricsAttributesRunnable(MaPSeqDAOBeanService mapseqDAOBeanService, WorkflowRun workflowRun) {
+    public SaveCollectHsMetricsAttributesRunnable() {
+        super();
+    }
+
+    public SaveCollectHsMetricsAttributesRunnable(MaPSeqDAOBeanService mapseqDAOBeanService, WorkflowRunAttempt workflowRunAttempt) {
         super();
         this.mapseqDAOBeanService = mapseqDAOBeanService;
-        this.workflowRun = workflowRun;
+        this.workflowRunAttempt = workflowRunAttempt;
     }
 
     @Override
     public void run() {
         logger.info("ENTERING run()");
 
-        Set<Sample> sampleSet = new HashSet<Sample>();
-
         SampleDAO sampleDAO = mapseqDAOBeanService.getSampleDAO();
         AttributeDAO attributeDAO = mapseqDAOBeanService.getAttributeDAO();
 
         try {
-            if (flowcellId != null) {
-                sampleSet.addAll(sampleDAO.findByFlowcellId(flowcellId));
+            WorkflowRun workflowRun = workflowRunAttempt.getWorkflowRun();
+            List<Sample> samples = sampleDAO.findByWorkflowRunId(workflowRun.getId());
+
+            if (CollectionUtils.isEmpty(samples)) {
+                logger.warn("No Samples found...not registering anything");
+                return;
             }
 
-            if (sampleId != null) {
-                Sample sample = sampleDAO.findById(sampleId);
-                if (sample == null) {
-                    logger.error("Sample was not found");
-                    return;
-                }
-                sampleSet.add(sample);
-            }
-
-            for (Sample sample : sampleSet) {
+            for (Sample sample : samples) {
 
                 File workflowDirectory = SequencingWorkflowUtil.createOutputDirectory(sample, workflowRun.getWorkflow());
 
@@ -137,28 +131,12 @@ public class SaveCollectHsMetricsAttributesRunnable implements Runnable {
 
     }
 
-    public Long getSampleId() {
-        return sampleId;
+    public WorkflowRunAttempt getWorkflowRunAttempt() {
+        return workflowRunAttempt;
     }
 
-    public void setSampleId(Long sampleId) {
-        this.sampleId = sampleId;
-    }
-
-    public Long getFlowcellId() {
-        return flowcellId;
-    }
-
-    public void setFlowcellId(Long flowcellId) {
-        this.flowcellId = flowcellId;
-    }
-
-    public WorkflowRun getWorkflowRun() {
-        return workflowRun;
-    }
-
-    public void setWorkflowRun(WorkflowRun workflowRun) {
-        this.workflowRun = workflowRun;
+    public void setWorkflowRunAttempt(WorkflowRunAttempt workflowRunAttempt) {
+        this.workflowRunAttempt = workflowRunAttempt;
     }
 
     public MaPSeqDAOBeanService getMapseqDAOBeanService() {

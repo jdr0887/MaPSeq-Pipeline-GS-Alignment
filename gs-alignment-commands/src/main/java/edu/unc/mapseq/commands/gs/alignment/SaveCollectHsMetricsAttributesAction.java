@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import edu.unc.mapseq.commons.gs.alignment.SaveCollectHsMetricsAttributesRunnable;
 import edu.unc.mapseq.dao.MaPSeqDAOBeanService;
 import edu.unc.mapseq.dao.MaPSeqDAOException;
-import edu.unc.mapseq.dao.model.WorkflowRun;
+import edu.unc.mapseq.dao.model.WorkflowRunAttempt;
 
 @Command(scope = "gs-alignment", name = "save-collect-hs-metrics-attributes", description = "Save CollectHsMetrics Attributes")
 @Service
@@ -22,14 +22,8 @@ public class SaveCollectHsMetricsAttributesAction implements Action {
 
     private final Logger logger = LoggerFactory.getLogger(SaveCollectHsMetricsAttributesAction.class);
 
-    @Option(name = "--sampleId", description = "Sample Identifier", required = false, multiValued = false)
-    private Long sampleId;
-
-    @Option(name = "--flowcellId", description = "Flowcell Identifier", required = false, multiValued = false)
-    private Long flowcellId;
-
-    @Option(name = "--workflowRunId", description = "WorkflowRun Identifier", required = true, multiValued = false)
-    private Long workflowRunId;
+    @Option(name = "--workflowRunAttemptId", description = "WorkflowRunAttempt Identifier", required = true, multiValued = false)
+    private Long workflowRunAttemptId;
 
     @Reference
     private MaPSeqDAOBeanService maPSeqDAOBeanService;
@@ -38,22 +32,11 @@ public class SaveCollectHsMetricsAttributesAction implements Action {
     public Object execute() {
         logger.debug("ENTERING execute()");
 
-        if (sampleId == null && flowcellId == null) {
-            System.out.println("Both the Sample & Flowcell identifiers can't be null");
-            return null;
-        }
-
         try {
             ExecutorService es = Executors.newSingleThreadExecutor();
-            WorkflowRun workflowRun = maPSeqDAOBeanService.getWorkflowRunDAO().findById(workflowRunId);
+            WorkflowRunAttempt workflowRunAttempt = maPSeqDAOBeanService.getWorkflowRunAttemptDAO().findById(workflowRunAttemptId);
 
-            SaveCollectHsMetricsAttributesRunnable runnable = new SaveCollectHsMetricsAttributesRunnable(maPSeqDAOBeanService, workflowRun);
-            if (sampleId != null) {
-                runnable.setSampleId(sampleId);
-            }
-            if (flowcellId != null) {
-                runnable.setFlowcellId(flowcellId);
-            }
+            SaveCollectHsMetricsAttributesRunnable runnable = new SaveCollectHsMetricsAttributesRunnable(maPSeqDAOBeanService, workflowRunAttempt);
             es.submit(runnable);
             es.shutdown();
         } catch (MaPSeqDAOException e) {
@@ -62,19 +45,4 @@ public class SaveCollectHsMetricsAttributesAction implements Action {
         return null;
     }
 
-    public Long getSampleId() {
-        return sampleId;
-    }
-
-    public void setSampleId(Long sampleId) {
-        this.sampleId = sampleId;
-    }
-
-    public Long getFlowcellId() {
-        return flowcellId;
-    }
-
-    public void setFlowcellId(Long flowcellId) {
-        this.flowcellId = flowcellId;
-    }
 }
