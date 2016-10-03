@@ -153,6 +153,9 @@ public class RegisterToIRODSRunnable implements Runnable {
                 Job job = SequencingWorkflowUtil.findJob(mapseqDAOBeanService, workflowRunAttempt.getId(), FastQC.class.getName(), file);
                 if (job != null) {
                     attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobId", job.getId().toString()));
+                    if (StringUtils.isNotEmpty(job.getCommandLine())) {
+                        attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobCommandLine", job.getCommandLine()));
+                    }
                 } else {
                     logger.warn(String.format("Couldn't find job for: %d, %s", workflowRunAttempt.getId(), FastQC.class.getName()));
                 }
@@ -166,6 +169,9 @@ public class RegisterToIRODSRunnable implements Runnable {
                 job = SequencingWorkflowUtil.findJob(mapseqDAOBeanService, workflowRunAttempt.getId(), FastQC.class.getName(), file);
                 if (job != null) {
                     attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobId", job.getId().toString()));
+                    if (StringUtils.isNotEmpty(job.getCommandLine())) {
+                        attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobCommandLine", job.getCommandLine()));
+                    }
                 } else {
                     logger.warn(String.format("Couldn't find job for: %d, %s", workflowRunAttempt.getId(), FastQC.class.getName()));
                 }
@@ -181,6 +187,9 @@ public class RegisterToIRODSRunnable implements Runnable {
                         file);
                 if (job != null) {
                     attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobId", job.getId().toString()));
+                    if (StringUtils.isNotEmpty(job.getCommandLine())) {
+                        attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobCommandLine", job.getCommandLine()));
+                    }
                 } else {
                     logger.warn(
                             String.format("Couldn't find job for: %d, %s", workflowRunAttempt.getId(), PicardAddOrReplaceReadGroups.class.getName()));
@@ -196,6 +205,9 @@ public class RegisterToIRODSRunnable implements Runnable {
                 job = SequencingWorkflowUtil.findJob(mapseqDAOBeanService, workflowRunAttempt.getId(), PicardCollectHsMetrics.class.getName(), file);
                 if (job != null) {
                     attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobId", job.getId().toString()));
+                    if (StringUtils.isNotEmpty(job.getCommandLine())) {
+                        attributeListWithJob.add(new ImmutablePair<String, String>("MaPSeqJobCommandLine", job.getCommandLine()));
+                    }
                 } else {
                     logger.warn(String.format("Couldn't find job for: %d, %s", workflowRunAttempt.getId(), PicardCollectHsMetrics.class.getName()));
                 }
