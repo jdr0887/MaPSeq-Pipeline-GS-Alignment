@@ -77,25 +77,26 @@ public class RegisterToIRODSRunnable implements Runnable {
                 return;
             }
 
-            for (Sample sample : samples) {
-                String referenceSequence = null;
+            String referenceSequence = null;
 
-                try {
-                    Collection<ServiceReference<WorkflowBeanService>> references = bundleContext.getServiceReferences(WorkflowBeanService.class,
-                            "(osgi.service.blueprint.compname=GSAlignmentWorkflowBeanService)");
+            try {
+                Collection<ServiceReference<WorkflowBeanService>> references = bundleContext.getServiceReferences(WorkflowBeanService.class,
+                        "(osgi.service.blueprint.compname=GSAlignmentWorkflowBeanService)");
 
-                    if (CollectionUtils.isNotEmpty(references)) {
-                        for (ServiceReference<WorkflowBeanService> sr : references) {
-                            WorkflowBeanService wbs = bundleContext.getService(sr);
-                            if (wbs != null && MapUtils.isNotEmpty(wbs.getAttributes())) {
-                                referenceSequence = wbs.getAttributes().get("referenceSequence");
-                                break;
-                            }
+                if (CollectionUtils.isNotEmpty(references)) {
+                    for (ServiceReference<WorkflowBeanService> sr : references) {
+                        WorkflowBeanService wbs = bundleContext.getService(sr);
+                        if (wbs != null && MapUtils.isNotEmpty(wbs.getAttributes())) {
+                            referenceSequence = wbs.getAttributes().get("referenceSequence");
+                            break;
                         }
                     }
-                } catch (InvalidSyntaxException e) {
-                    e.printStackTrace();
                 }
+            } catch (InvalidSyntaxException e) {
+                e.printStackTrace();
+            }
+
+            for (Sample sample : samples) {
 
                 File workflowDirectory = SequencingWorkflowUtil.createOutputDirectory(sample, workflow);
                 File tmpDir = new File(workflowDirectory, "tmp");
