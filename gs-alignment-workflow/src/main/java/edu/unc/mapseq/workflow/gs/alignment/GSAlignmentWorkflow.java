@@ -32,6 +32,7 @@ import edu.unc.mapseq.module.sequencing.fastqc.IgnoreLevelType;
 import edu.unc.mapseq.module.sequencing.picard.PicardSortOrderType;
 import edu.unc.mapseq.module.sequencing.picard2.PicardAddOrReplaceReadGroupsCLI;
 import edu.unc.mapseq.module.sequencing.picard2.PicardCollectHsMetricsCLI;
+import edu.unc.mapseq.module.sequencing.picard2.PicardMarkDuplicatesCLI;
 import edu.unc.mapseq.module.sequencing.samtools.SAMToolsIndexCLI;
 import edu.unc.mapseq.workflow.WorkflowException;
 import edu.unc.mapseq.workflow.sequencing.AbstractSequencingWorkflow;
@@ -149,10 +150,10 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 // new job
                 builder = SequencingWorkflowJobFactory.createJob(++count, PicardAddOrReplaceReadGroupsCLI.class, attempt.getId(), sample.getId())
                         .siteName(siteName);
-                File fixRGOutput = new File(workflowDirectory, bwaMemOutFile.getName().replace(".sam", ".rg.bam"));
+                File picardAddOrReplaceReadGroupsOut = new File(workflowDirectory, bwaMemOutFile.getName().replace(".sam", ".rg.bam"));
                 String readGroupId = String.format("%s.L%03d", flowcell.getName(), sample.getLaneIndex());
                 builder.addArgument(PicardAddOrReplaceReadGroupsCLI.INPUT, bwaMemOutFile.getAbsolutePath())
-                        .addArgument(PicardAddOrReplaceReadGroupsCLI.OUTPUT, fixRGOutput.getAbsolutePath())
+                        .addArgument(PicardAddOrReplaceReadGroupsCLI.OUTPUT, picardAddOrReplaceReadGroupsOut.getAbsolutePath())
                         .addArgument(PicardAddOrReplaceReadGroupsCLI.SORTORDER, PicardSortOrderType.COORDINATE.toString().toLowerCase())
                         .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPID, readGroupId)
                         .addArgument(PicardAddOrReplaceReadGroupsCLI.READGROUPLIBRARY, String.format("%s.%s", subjectName, sample.getBarcode()))
@@ -167,8 +168,9 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
 
                 // new job
                 builder = SequencingWorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
-                File picardAddOrReplaceReadGroupsIndexOut = new File(workflowDirectory, fixRGOutput.getName().replace(".bam", ".bai"));
-                builder.addArgument(SAMToolsIndexCLI.INPUT, fixRGOutput.getAbsolutePath()).addArgument(SAMToolsIndexCLI.OUTPUT,
+                File picardAddOrReplaceReadGroupsIndexOut = new File(workflowDirectory,
+                        picardAddOrReplaceReadGroupsOut.getName().replace(".bam", ".bai"));
+                builder.addArgument(SAMToolsIndexCLI.INPUT, picardAddOrReplaceReadGroupsOut.getAbsolutePath()).addArgument(SAMToolsIndexCLI.OUTPUT,
                         picardAddOrReplaceReadGroupsIndexOut.getAbsolutePath());
                 CondorJob samtoolsIndexJob = builder.build();
                 logger.info(samtoolsIndexJob.toString());
@@ -176,18 +178,34 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 graph.addEdge(picardAddOrReplaceReadGroupsJob, samtoolsIndexJob);
 
                 // new job
-                builder = SequencingWorkflowJobFactory.createJob(++count, RemoveCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
-                builder.addArgument(RemoveCLI.FILE, bwaMemOutFile.getAbsolutePath());
-                CondorJob removeJob = builder.build();
-                logger.info(removeJob.toString());
-                graph.addVertex(removeJob);
-                graph.addEdge(picardAddOrReplaceReadGroupsJob, removeJob);
+                builder = SequencingWorkflowJobFactory.createJob(++count, PicardMarkDuplicatesCLI.class, attempt.getId(), sample.getId())
+                        .siteName(siteName);
+                File picardMarkDuplicatesMetricsFile = new File(workflowDirectory,
+                        picardAddOrReplaceReadGroupsOut.getName().replace(".bam", ".md.metrics"));
+                File picardMarkDuplicatesOutput = new File(workflowDirectory, picardAddOrReplaceReadGroupsOut.getName().replace(".bam", ".md.bam"));
+                builder.addArgument(PicardMarkDuplicatesCLI.INPUT, picardAddOrReplaceReadGroupsOut.getAbsolutePath())
+                        .addArgument(PicardMarkDuplicatesCLI.METRICSFILE, picardMarkDuplicatesMetricsFile.getAbsolutePath())
+                        .addArgument(PicardMarkDuplicatesCLI.OUTPUT, picardMarkDuplicatesOutput.getAbsolutePath());
+                CondorJob picardMarkDuplicatesJob = builder.build();
+                logger.info(picardMarkDuplicatesJob.toString());
+                graph.addVertex(picardMarkDuplicatesJob);
+                graph.addEdge(picardAddOrReplaceReadGroupsJob, picardMarkDuplicatesJob);
+
+                // new job
+                builder = SequencingWorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
+                File picardMarkDuplicatesIndexOut = new File(workflowDirectory, picardMarkDuplicatesOutput.getName().replace(".bam", ".bai"));
+                builder.addArgument(SAMToolsIndexCLI.INPUT, picardMarkDuplicatesOutput.getAbsolutePath()).addArgument(SAMToolsIndexCLI.OUTPUT,
+                        picardMarkDuplicatesIndexOut.getAbsolutePath());
+                samtoolsIndexJob = builder.build();
+                logger.info(samtoolsIndexJob.toString());
+                graph.addVertex(samtoolsIndexJob);
+                graph.addEdge(picardMarkDuplicatesJob, samtoolsIndexJob);
 
                 // new job
                 builder = SequencingWorkflowJobFactory.createJob(++count, PicardCollectHsMetricsCLI.class, attempt.getId(), sample.getId())
                         .siteName(siteName);
-                File picardCollectHsMetricsFile = new File(workflowDirectory, fixRGOutput.getName().replace(".bam", ".hs.metrics"));
-                builder.addArgument(PicardCollectHsMetricsCLI.INPUT, fixRGOutput.getAbsolutePath())
+                File picardCollectHsMetricsFile = new File(workflowDirectory, picardMarkDuplicatesOutput.getName().replace(".bam", ".hs.metrics"));
+                builder.addArgument(PicardCollectHsMetricsCLI.INPUT, picardAddOrReplaceReadGroupsOut.getAbsolutePath())
                         .addArgument(PicardCollectHsMetricsCLI.OUTPUT, picardCollectHsMetricsFile.getAbsolutePath())
                         .addArgument(PicardCollectHsMetricsCLI.REFERENCESEQUENCE, referenceSequence)
                         .addArgument(PicardCollectHsMetricsCLI.BAITINTERVALS, baitIntervalList)
@@ -195,7 +213,17 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 CondorJob picardCollectHsMetricsJob = builder.build();
                 logger.info(picardCollectHsMetricsJob.toString());
                 graph.addVertex(picardCollectHsMetricsJob);
-                graph.addEdge(picardAddOrReplaceReadGroupsJob, picardCollectHsMetricsJob);
+                graph.addEdge(samtoolsIndexJob, picardCollectHsMetricsJob);
+
+                // new job
+                builder = SequencingWorkflowJobFactory.createJob(++count, RemoveCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
+                builder.addArgument(RemoveCLI.FILE, bwaMemOutFile.getAbsolutePath())
+                        .addArgument(RemoveCLI.FILE, picardAddOrReplaceReadGroupsOut.getAbsolutePath())
+                        .addArgument(RemoveCLI.FILE, picardAddOrReplaceReadGroupsIndexOut.getAbsolutePath());
+                CondorJob removeJob = builder.build();
+                logger.info(removeJob.toString());
+                graph.addVertex(removeJob);
+                graph.addEdge(samtoolsIndexJob, removeJob);
 
             } catch (Exception e) {
                 throw new WorkflowException(e);
