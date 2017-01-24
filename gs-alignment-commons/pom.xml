@@ -2,13 +2,13 @@
  <parent>
   <groupId>edu.unc.mapseq.pipelines</groupId>
   <artifactId>gs-alignment</artifactId>
-  <version>0.6.66</version>
+  <version>0.6.67-SNAPSHOT</version>
  </parent>
  <name>MaPSeq :: Pipelines :: GS Alignment :: Commons</name>
  <modelVersion>4.0.0</modelVersion>
  <groupId>edu.unc.mapseq.pipelines.gs-alignment</groupId>
  <artifactId>gs-alignment-commons</artifactId>
- <version>0.6.66</version>
+ <version>0.6.67-SNAPSHOT</version>
  <packaging>bundle</packaging>
  <dependencies>
   <dependency>
