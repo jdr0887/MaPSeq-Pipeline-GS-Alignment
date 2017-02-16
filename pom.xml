@@ -3,7 +3,7 @@
   <parent>
     <groupId>edu.unc.mapseq</groupId>
     <artifactId>pipeline</artifactId>
-    <version>0.6.70</version>    
+    <version>0.6.72</version>    
   </parent>
   <name>MaPSeq :: Pipelines :: GS Alignment</name>
   <modelVersion>4.0.0</modelVersion>
@@ -11,6 +11,9 @@
   <artifactId>gs-alignment</artifactId>
   <version>0.6.67-SNAPSHOT</version>
   <packaging>pom</packaging>
+  <properties>
+    <maven.site.plugin.skip>false</maven.site.plugin.skip>    
+  </properties>              
   <url>https://jdr0887.github.io/MaPSeq-Pipeline-GS-Alignment</url>
   <organization>
     <name>RENCI</name>
