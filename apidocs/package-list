@@ -1,0 +1,5 @@
+edu.unc.mapseq.commands.gs.alignment
+edu.unc.mapseq.commons.gs.alignment
+edu.unc.mapseq.executor.gs.alignment
+edu.unc.mapseq.messaging.gs.alignment
+edu.unc.mapseq.workflow.gs.alignment
