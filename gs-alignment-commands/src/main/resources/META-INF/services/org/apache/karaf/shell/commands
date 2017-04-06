@@ -1,4 +1,0 @@
-edu.unc.mapseq.commands.gs.alignment.RegisterToIRODSAction
-edu.unc.mapseq.commands.gs.alignment.RegisterAllToIRODSAction
-edu.unc.mapseq.commands.gs.alignment.RunWorkflowAction
-edu.unc.mapseq.commands.gs.alignment.SaveCollectHsMetricsAttributesAction
