@@ -189,7 +189,7 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 CondorJob picardMarkDuplicatesJob = builder.build();
                 logger.info(picardMarkDuplicatesJob.toString());
                 graph.addVertex(picardMarkDuplicatesJob);
-                graph.addEdge(picardAddOrReplaceReadGroupsJob, picardMarkDuplicatesJob);
+                graph.addEdge(samtoolsIndexJob, picardMarkDuplicatesJob);
 
                 // new job
                 builder = SequencingWorkflowJobFactory.createJob(++count, SAMToolsIndexCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
