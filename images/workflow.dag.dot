@@ -1,13 +1,59 @@
 digraph G {
-  FastQCCLI_1 [ label="FastQCCLI_1" ];
-  FastQCCLI_2 [ label="FastQCCLI_2" ];
-  BWAMEMCLI_3 [ label="BWAMEMCLI_3" ];
-  PicardAddOrReplaceReadGroupsCLI_4 [ label="PicardAddOrReplaceReadGroupsCLI_4" ];
-  SAMToolsIndexCLI_5 [ label="SAMToolsIndexCLI_5" ];
-  PicardMarkDuplicatesCLI_6 [ label="PicardMarkDuplicatesCLI_6" ];
-  SAMToolsIndexCLI_7 [ label="SAMToolsIndexCLI_7" ];
-  PicardCollectHsMetricsCLI_8 [ label="PicardCollectHsMetricsCLI_8" ];
-  RemoveCLI_9 [ label="RemoveCLI_9" ];
+  FastQCCLI_1 [ label="FastQCCLI_1
+--input <R1>.fastq.gz
+--output <workflowRunName>.r1.fastqc.zip
+--ignore ERROR
+" ];
+  FastQCCLI_2 [ label="FastQCCLI_2
+--input <R2>.fastq.gz
+--output <workflowRunName>.r2.fastqc.zip
+--ignore ERROR
+" ];
+  BWAMEMCLI_3 [ label="BWAMEMCLI_3
+--threads 4
+--verbosity 1
+--fastaDB <referenceSequence>
+--fastq1 <R1>.fastq.gz
+--fastq2 <R2>.fastq.gz
+--outFile <workflowRunName>.mem.sam
+--markShorterSplitHits
+" ];
+  PicardAddOrReplaceReadGroupsCLI_4 [ label="PicardAddOrReplaceReadGroupsCLI_4
+--input <workflowRunName>.mem.sam
+--output <workflowRunName>.mem.rg.bam
+--sortOrder coordinate
+--readGroupId <readGroupId>
+--readGroupLibrary <readGroupLibrary>
+--readGroupPlatform <readGroupPlatform>
+--readGroupPlatformUnit <readGroupId>
+--readGroupSampleName <subjectName>
+--readGroupCenterName UNC
+" ];
+  SAMToolsIndexCLI_5 [ label="SAMToolsIndexCLI_5
+--input <workflowRunName>.mem.rg.bam
+--output <workflowRunName>.mem.rg.bai
+" ];
+  PicardMarkDuplicatesCLI_6 [ label="PicardMarkDuplicatesCLI_6
+--input <workflowRunName>.mem.rg.bam
+--metricsFile <workflowRunName>.mem.rg.md.metrics
+--output <workflowRunName>.mem.rg.md.bam
+" ];
+  SAMToolsIndexCLI_7 [ label="SAMToolsIndexCLI_7
+--input <workflowRunName>.mem.rg.md.bam
+--output <workflowRunName>.mem.rg.md.bai
+" ];
+  PicardCollectHsMetricsCLI_8 [ label="PicardCollectHsMetricsCLI_8
+--input <workflowRunName>.mem.rg.md.bam
+--output <workflowRunName>.mem.rg.md.hs.metrics
+--referenceSequence <referenceSequence>
+--baitIntervals <baitIntervalList>
+--targetIntervals <targetIntervalList>
+" ];
+  RemoveCLI_9 [ label="RemoveCLI_9
+--file <workflowRunName>.mem.sam
+--file <workflowRunName>.mem.rg.bam
+--file <workflowRunName>.mem.rg.bai
+" ];
   FastQCCLI_1 -> BWAMEMCLI_3;
   FastQCCLI_2 -> BWAMEMCLI_3;
   BWAMEMCLI_3 -> PicardAddOrReplaceReadGroupsCLI_4;
