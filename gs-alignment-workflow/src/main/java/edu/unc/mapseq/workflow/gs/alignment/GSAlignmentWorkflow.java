@@ -119,7 +119,6 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 File fastqcR1Output = new File(workflowDirectory, String.format("%s.r1.fastqc.zip", rootFileName));
                 builder.addArgument(FastQCCLI.INPUT, r1FastqFile.getAbsolutePath()).addArgument(FastQCCLI.OUTPUT, fastqcR1Output.getAbsolutePath())
                         .addArgument(FastQCCLI.IGNORE, IgnoreLevelType.ERROR.toString());
-
                 CondorJob fastQCR1Job = builder.build();
                 logger.info(fastQCR1Job.toString());
                 graph.addVertex(fastQCR1Job);
