@@ -208,7 +208,7 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 builder = SequencingWorkflowJobFactory.createJob(++count, PicardCollectHsMetricsCLI.class, attempt.getId(), sample.getId())
                         .siteName(siteName);
                 File picardCollectHsMetricsFile = new File(workflowDirectory,
-                        picardAddOrReplaceReadGroupsIndexOut.getName().replace(".bam", ".hs.metrics"));
+                        picardAddOrReplaceReadGroupsOut.getName().replace(".bam", ".hs.metrics"));
                 builder.addArgument(PicardCollectHsMetricsCLI.INPUT, picardAddOrReplaceReadGroupsOut.getAbsolutePath())
                         .addArgument(PicardCollectHsMetricsCLI.OUTPUT, picardCollectHsMetricsFile.getAbsolutePath())
                         .addArgument(PicardCollectHsMetricsCLI.REFERENCESEQUENCE, referenceSequence)
