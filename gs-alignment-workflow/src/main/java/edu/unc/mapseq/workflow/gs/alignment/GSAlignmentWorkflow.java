@@ -207,7 +207,8 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
                 // new job
                 builder = SequencingWorkflowJobFactory.createJob(++count, PicardCollectHsMetricsCLI.class, attempt.getId(), sample.getId())
                         .siteName(siteName);
-                File picardCollectHsMetricsFile = new File(workflowDirectory, picardAddOrReplaceReadGroupsIndexOut.getName().replace(".bam", ".hs.metrics"));
+                File picardCollectHsMetricsFile = new File(workflowDirectory,
+                        picardAddOrReplaceReadGroupsIndexOut.getName().replace(".bam", ".hs.metrics"));
                 builder.addArgument(PicardCollectHsMetricsCLI.INPUT, picardAddOrReplaceReadGroupsIndexOut.getAbsolutePath())
                         .addArgument(PicardCollectHsMetricsCLI.OUTPUT, picardCollectHsMetricsFile.getAbsolutePath())
                         .addArgument(PicardCollectHsMetricsCLI.REFERENCESEQUENCE, referenceSequence)
@@ -220,9 +221,7 @@ public class GSAlignmentWorkflow extends AbstractSequencingWorkflow {
 
                 // new job
                 builder = SequencingWorkflowJobFactory.createJob(++count, RemoveCLI.class, attempt.getId(), sample.getId()).siteName(siteName);
-                builder.addArgument(RemoveCLI.FILE, bwaMemOutFile.getAbsolutePath())
-                        .addArgument(RemoveCLI.FILE, picardAddOrReplaceReadGroupsOut.getAbsolutePath())
-                        .addArgument(RemoveCLI.FILE, picardAddOrReplaceReadGroupsIndexOut.getAbsolutePath());
+                builder.addArgument(RemoveCLI.FILE, bwaMemOutFile.getAbsolutePath());
                 CondorJob removeJob = builder.build();
                 logger.info(removeJob.toString());
                 graph.addVertex(removeJob);
